@@ -1,0 +1,36 @@
+{
+    "repos": {
+    },
+    "data_download": {
+        "script_remote_path": "/apps/autodl/dataset_down/",
+        "script_local_path": "/root/dataset_down/"
+    },
+    "category_groups": [
+        "YOUR_CATEGORY_GROUPS"
+    ],
+    "models": {
+        "dino": {
+            "remote_path": "/apps/autodl/model/dino/",
+            "local_path": "/root/autodl-tmp/model/dino"
+        },
+        "rtdetrv2": {
+            "url": "https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r50vd_m_7x_coco_ema.pth",
+            "local_path": "/root/autodl-tmp/model/rtdetrv2",
+            "filename": "rtdetrv2_r50vd_m_7x_coco_ema.pth"
+        }
+    },
+    "bdnd_config": {
+        "encrypted_baidu_netdisk_access_token": "***",
+        "baidu_netdisk_access_token_encryption_key": "***"
+    },
+    "accounts": {
+        "admin": "admin",
+        "user1": "password1",
+        "user2": "password2"
+    },
+    "login": {
+        "username": "admin",
+        "password": "admin"
+    }
+}
+

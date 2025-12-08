@@ -1,0 +1,3749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>准备设置 - AutoDL 弹性部署</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <!-- Monaco Editor -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: #333;
+            position: relative;
+            font-size: 0.9em;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.6em;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.85em;
+        }
+
+        .content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid #667eea;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 18px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .section-content {
+            font-size: 0.9em;
+        }
+
+        .repo-card {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .repo-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.1);
+        }
+
+        .repo-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .repo-name {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .repo-url {
+            font-size: 0.8em;
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85em;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .snapshot-item {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .snapshot-item .form-group {
+            flex: 1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            font-size: 0.85em;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 6px 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 0.8em;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .script-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        .script-editor {
+            width: 100%;
+            min-height: 300px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            tab-size: 4;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+        }
+
+        .script-editor:focus {
+            border: 1px solid #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .script-output-header {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.1);
+            color: #d4d4d4;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            font-weight: normal;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        .btn-icon:active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-icon span:first-child {
+            font-size: 1em;
+        }
+
+        .script-output::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .script-output::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        .script-output::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .alert {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 3px solid #dc3545;
+        }
+
+        .slider-container {
+            margin-top: 10px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e9ecef;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            text-align: center;
+            margin-top: 5px;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.9em;
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+
+        .add-btn:hover {
+            background: #218838;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .hint {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .btn-copy {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .btn-copy:hover {
+            background: #138496;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .modal-header {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-body textarea {
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* 标签输入框样式 */
+        .tags-input-container {
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 8px;
+            min-height: 40px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            background: white;
+            cursor: text;
+        }
+
+        .tags-input-container:focus-within {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            gap: 6px;
+        }
+
+        .tag-item .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+
+        .tag-item .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .tags-input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            font-size: 0.9em;
+            padding: 4px;
+        }
+
+        .tags-input::placeholder {
+            color: #999;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-icon {
+            font-size: 1.2em;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .scripts-list {
+            margin-top: 20px;
+        }
+
+        .script-file-item {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .script-file-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.1);
+        }
+
+        .script-file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .script-file-name {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #333;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .script-file-meta {
+            font-size: 0.8em;
+            color: #6c757d;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .script-file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-link {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        .btn-link:hover {
+            background: #138496;
+        }
+
+        .btn-copy-link {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-copy-link:hover {
+            background: #218838;
+        }
+
+        .btn-copy-link.copied {
+            background: #6c757d;
+        }
+
+        .btn-delete-link {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete-link:hover {
+            background: #c82333;
+        }
+
+        .scripts-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .scripts-list-empty {
+            text-align: center;
+            padding: 30px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar-toggle {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            padding: 6px 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            font-size: 1.1em;
+            color: #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle span:last-child {
+            display: none;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-1px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        .sidebar-toggle:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -50%;
+            width: 50%;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .sidebar-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-close:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .sidebar-content {
+            padding-top: 10px;
+        }
+
+        .sidebar .scripts-list {
+            margin-top: 0;
+        }
+
+        .sidebar .script-file-item {
+            margin-bottom: 12px;
+        }
+
+        /* 侧边栏标签切换 */
+        .sidebar-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .sidebar-tab {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 0.9em;
+            color: #6c757d;
+            transition: all 0.2s ease;
+            margin-bottom: -2px;
+        }
+
+        .sidebar-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .sidebar-tab:hover {
+            color: #667eea;
+        }
+
+        .sidebar-tab-content {
+            display: none;
+        }
+
+        .sidebar-tab-content.active {
+            display: block;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                left: -100%;
+            }
+
+            .sidebar-toggle {
+                top: 10px;
+                left: 10px;
+                width: 32px;
+                height: 32px;
+                padding: 5px;
+                font-size: 1em;
+            }
+
+            .sidebar .script-file-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .sidebar .script-file-actions {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            .sidebar .script-file-actions .btn-link {
+                flex: 1;
+            }
+        }
+
+        /* 响应式设计 - 手机适配 */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                border-radius: 8px;
+            }
+
+            .header {
+                padding: 15px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .header p {
+                font-size: 0.85em;
+            }
+
+            .content {
+                padding: 15px;
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .section {
+                padding: 12px;
+            }
+
+            .section-title {
+                font-size: 1em;
+            }
+
+            .section-content {
+                font-size: 0.85em;
+            }
+
+            .repo-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 12px;
+            }
+
+            .repo-info {
+                width: 100%;
+            }
+
+            .checkbox-group {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            .snapshot-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .snapshot-item .form-group {
+                width: 100%;
+            }
+
+            .snapshot-item .remove-btn {
+                align-self: flex-end;
+                margin-top: 5px;
+            }
+
+            .form-group {
+                margin-bottom: 10px;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            select {
+                font-size: 16px; /* 防止 iOS 自动缩放 */
+                padding: 8px 10px;
+            }
+
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.95em;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .btn-icon {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+
+            .script-output {
+                font-size: 0.75em;
+                padding: 12px;
+                max-height: 300px;
+            }
+
+            .script-output-header {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 10px;
+                justify-content: flex-end;
+            }
+
+            .modal-content {
+                padding: 20px;
+                max-width: 95%;
+                margin: 20px auto;
+            }
+
+            .modal-header {
+                font-size: 1.1em;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .modal-footer .btn {
+                width: 100%;
+            }
+
+            .toast {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+                padding: 12px 15px;
+                font-size: 0.9em;
+            }
+
+            /* 数据集生成的两列布局改为单列 */
+            #merge-content > div[style*="grid-template-columns"] {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
+            }
+
+            /* 调整滑块容器 */
+            .slider-container {
+                margin-top: 8px;
+            }
+
+            .slider {
+                height: 8px;
+            }
+
+            .slider::-webkit-slider-thumb {
+                width: 20px;
+                height: 20px;
+            }
+
+            /* 优化按钮间距 */
+            .add-btn {
+                width: 100%;
+                padding: 10px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* 超小屏幕（小于 480px）进一步优化 */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.3em;
+            }
+
+            .header p {
+                font-size: 0.8em;
+            }
+
+            .content {
+                padding: 10px;
+            }
+
+            .section {
+                padding: 10px;
+            }
+
+            .section-title {
+                font-size: 0.95em;
+            }
+
+            .toggle-switch {
+                width: 40px;
+                height: 22px;
+            }
+
+            .toggle-slider:before {
+                height: 16px;
+                width: 16px;
+            }
+
+            input:checked + .toggle-slider:before {
+                transform: translateX(18px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏切换按钮 -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="查看历史脚本">
+        <span>📋</span>
+        <span>History</span>
+    </button>
+
+    <!-- 侧边栏遮罩层 -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">历史</div>
+            <button class="sidebar-close" onclick="closeSidebar()" title="关闭">×</button>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" onclick="switchSidebarTab('scripts', this)">历史脚本</button>
+                <button class="sidebar-tab" onclick="switchSidebarTab('configs', this)">历史配置</button>
+                <button class="sidebar-tab" onclick="switchSidebarTab('settings', this)">设置</button>
+            </div>
+            
+            <!-- 历史脚本 -->
+            <div class="sidebar-tab-content active" id="scripts-tab">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button class="btn btn-secondary btn-small" onclick="loadScriptsList()" title="刷新列表">
+                        <span>🔄</span>
+                        <span>刷新</span>
+                    </button>
+                </div>
+                <div class="scripts-list" id="scripts-list">
+                    <div class="scripts-list-empty">正在加载...</div>
+                </div>
+            </div>
+            
+            <!-- 历史配置 -->
+            <div class="sidebar-tab-content" id="configs-tab">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button class="btn btn-secondary btn-small" onclick="loadConfigsList()" title="刷新列表">
+                        <span>🔄</span>
+                        <span>刷新</span>
+                    </button>
+                </div>
+                <div class="scripts-list" id="configs-list">
+                    <div class="scripts-list-empty">正在加载...</div>
+                </div>
+            </div>
+            
+            <!-- 设置 -->
+            <div class="sidebar-tab-content" id="settings-tab">
+                <div style="padding: 10px;">
+                    <!-- 管理员账户管理 -->
+                    {% if is_admin %}
+                    <div class="section" style="margin-bottom: 15px;">
+                        <div class="section-title" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>账户管理</span>
+                            <button class="btn btn-secondary btn-small" onclick="showAddAccountModal()">+ 添加账户</button>
+                        </div>
+                        <div id="accounts-management-list" style="max-height: 200px; overflow-y: auto;">
+                            <div class="scripts-list-empty">正在加载...</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 修改密码 -->
+                    <div class="section" style="margin-bottom: 15px;">
+                        <div class="section-title" style="margin-bottom: 10px;">change password</div>
+                        <div class="form-group">
+                            <label class="form-label">old password</label>
+                            <input type="password" id="old-password" class="form-input" placeholder="请输入旧密码">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">new password</label>
+                            <input type="password" id="new-password" class="form-input" placeholder="请输入新密码">
+                        </div>
+                        <button class="btn btn-primary" onclick="changePassword()" style="width: 100%;">修改密码</button>
+                    </div>
+                    
+                    <!-- 管理模型 -->
+                    <div class="section" style="margin-bottom: 15px;">
+                        <div class="section-title" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>模型配置</span>
+                            <button class="btn btn-secondary btn-small" onclick="showAddModelModal()">+ 添加</button>
+                        </div>
+                        <div id="models-management-list" style="max-height: 300px; overflow-y: auto;">
+                            <div class="scripts-list-empty">正在加载...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 管理代码仓库 -->
+                    <div class="section" style="margin-bottom: 15px;">
+                        <div class="section-title" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>代码仓库配置</span>
+                            <button class="btn btn-secondary btn-small" onclick="showAddRepoModal()">+ 添加</button>
+                        </div>
+                        <div id="repos-management-list" style="max-height: 300px; overflow-y: auto;">
+                            <div class="scripts-list-empty">正在加载...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 管理类别映射组（仅管理员，全局共享） -->
+                    {% if is_admin %}
+                    <div class="section" style="margin-bottom: 15px;">
+                        <div class="section-title" style="margin-bottom: 10px;">类别映射组（全局共享）</div>
+                        <div class="form-group">
+                            <label class="form-label">映射组列表（所有用户共享）</label>
+                            <div class="tags-input-container" id="category-groups-tags-container">
+                                <input type="text" class="tags-input" id="category-groups-input" placeholder="输入映射组名称后按回车添加">
+                            </div>
+                            <small style="color: #666; font-size: 0.85em;">输入映射组名称后按回车键添加，点击标签上的 × 删除</small>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveCategoryGroups()" style="width: 100%;">保存全局类别映射组</button>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 管理自己的类别映射组（所有用户） -->
+                    <div class="section" style="margin-bottom: 15px;">
+                        <div class="section-title" style="margin-bottom: 10px;">我的类别映射组</div>
+                        <div class="form-group">
+                            <label class="form-label">映射组列表</label>
+                            <div class="tags-input-container" id="user-category-groups-tags-container">
+                                <input type="text" class="tags-input" id="user-category-groups-input" placeholder="输入映射组名称后按回车添加">
+                            </div>
+                            <small style="color: #666; font-size: 0.85em;">输入映射组名称后按回车键添加，点击标签上的 × 删除，会与全局映射组合并显示</small>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveUserCategoryGroups()" style="width: 100%;">保存我的类别映射组</button>
+                    </div>
+                    
+                    <!-- 系统配置 -->
+                    <div class="section" style="margin-bottom: 15px;">
+                        <div class="section-title" style="margin-bottom: 10px;">系统配置</div>
+                        
+                        <!-- 百度网盘配置 -->
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label class="form-label">百度网盘配置 (.env_config.json 文件内容)</label>
+                            <textarea id="env-config-content" class="form-input" rows="8" placeholder='请输入 .env_config.json 文件的完整内容，例如:&#10;{&#10;  "encrypted_baidu_netdisk_access_token": "...",&#10;  "baidu_netdisk_access_token_encryption_key": "..."&#10;}' style="font-family: 'Courier New', monospace;"></textarea>
+                            <small style="color: #666; font-size: 0.85em;">直接粘贴 .env_config.json 文件的完整内容，保存后会写入到 $HOME/.env_config.json</small>
+                        </div>
+                        
+                        <!-- Git SSH 配置 -->
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label class="form-label">Git SSH 配置路径（在 /root/autodl-fs 目录中）</label>
+                            <input type="text" id="git-ssh-path" class="form-input" placeholder="例如: git_ssh 或 config/git_ssh">
+                            <small style="color: #666; font-size: 0.85em;">相对于 /root/autodl-fs 的路径，脚本会优先从此路径读取 Git SSH 配置，如果不存在则从百度网盘下载</small>
+                        </div>
+                        
+                        <!-- 数据集缓存路径 -->
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label class="form-label">数据集缓存路径（相对于 /root/autodl-fs）</label>
+                            <input type="text" id="dataset-cache-path" class="form-input" placeholder="例如: cache/datasets" value="cache/datasets">
+                            <small style="color: #666; font-size: 0.85em;">数据集会优先从此路径读取，默认: cache/datasets</small>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="saveSystemConfig()" style="width: 100%;">保存系统配置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>准备设置</h1>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 0.9em; opacity: 0.9;">
+                        当前用户: <strong>{{ username }}</strong>
+                        {% if is_admin %}
+                        <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-left: 8px;">管理员</span>
+                        {% endif %}
+                    </span>
+                    <a href="/" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; text-decoration: none;">主菜单</a>
+                    <button onclick="logout()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em;">登出</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 代码仓库 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">代码仓库</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enable_repos" checked onchange="toggleSection('repos')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="section-content" id="repos-content">
+                    <div id="repos-container"></div>
+                </div>
+            </div>
+
+            <!-- 数据快照 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">数据快照下载</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enable_snapshots" checked onchange="toggleSection('snapshots')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="section-content" id="snapshots-content">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label">类别映射组（可选，统一应用到所有快照）</label>
+                        <select id="category_group" style="padding: 6px 10px; border: 1px solid #e9ecef; border-radius: 4px; font-size: 0.9em; width: 100%; background: white; cursor: pointer;">
+                            <option value="">（不映射）</option>
+                        </select>
+                    </div>
+                    <div id="snapshots-container"></div>
+                    <button class="add-btn" onclick="addSnapshot()">+ 添加快照</button>
+                </div>
+            </div>
+
+            <!-- 模型下载和数据集生成并排 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- 模型下载 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">模型下载</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enable_models" onchange="toggleSection('models')">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content" id="models-content">
+                        <div id="models-container"></div>
+                    </div>
+                </div>
+
+                <!-- 数据集生成 -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">数据集生成</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enable_merge" checked onchange="toggleSection('merge')">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content" id="merge-content">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                        <div class="form-group">
+                            <label class="form-label">输出目录</label>
+                            <input type="text" id="output_dir" value="/root/autodl-tmp" placeholder="/root/autodl-tmp">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">数据集名称</label>
+                            <input type="text" id="dataset_name" value="dataset" placeholder="dataset">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em;">
+                            <input type="checkbox" id="use_random_split" onchange="toggleSplitRatio()">
+                            <span>使用随机划分（否则按train/valid目录生成）</span>
+                        </label>
+                    </div>
+                    <div id="split_ratio_container" style="display: none;">
+                        <label class="form-label">训练集比例</label>
+                        <div class="slider-container">
+                            <input type="range" id="split_ratio" class="slider" min="0.1" max="0.9" step="0.1" value="0.8" oninput="updateSplitValue()">
+                            <div class="slider-value" id="split_value">80%</div>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label class="form-label">随机种子</label>
+                            <input type="number" id="split_seed" class="form-input" min="0" max="999999" value="42" placeholder="42">
+                            <div class="hint" style="font-size: 0.85em; color: #6c757d; margin-top: 5px;">设置随机种子以确保划分结果可复现</div>
+                        </div>
+                    </div>
+                    <div class="hint">注意：数据集生成需要先执行数据快照下载</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生成脚本 -->
+            <div class="section full-width">
+                <div class="section-title" style="margin-bottom: 12px;">生成脚本</div>
+                <div id="alert-container"></div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="generateScript()">生成执行脚本</button>
+                    <button class="btn btn-secondary" onclick="saveScript()" id="save-btn" style="display: none;">保存脚本</button>
+                </div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 8px; font-size: 0.9em;">正在生成脚本...</p>
+                </div>
+                <div id="script-output" style="display: none;">
+                    <div style="position: relative; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 10px 15px; border-bottom: 2px solid #dee2e6;">
+                            <span style="font-size: 0.9em; color: #495057; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <span>💻</span>
+                                <span>代码编辑器</span>
+                            </span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button type="button" class="btn btn-primary" onclick="copyScript()" id="copy-btn" style="padding: 6px 12px; font-size: 0.85em; width: auto;">📋 复制</button>
+                                <button type="button" class="btn btn-primary" onclick="toggleFullscreenScriptEditor()" style="padding: 6px 12px; font-size: 0.85em; width: auto;" title="全屏编辑">⛶ 全屏</button>
+                            </div>
+                        </div>
+                        <div id="script-monaco-editor" style="height: 400px; min-height: 300px;"></div>
+                    </div>
+                </div>
+                
+                <!-- 全屏脚本编辑器 -->
+                <div id="fullscreen-script-editor-modal" class="modal-overlay" style="display: none; z-index: 2000;">
+                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid #dee2e6; background: #f8f9fa;">
+                            <span style="font-size: 1em; color: #495057; font-weight: 600;">全屏代码编辑器</span>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button type="button" class="btn btn-primary" onclick="copyScript()" style="padding: 6px 15px; font-size: 0.9em;">📋 复制</button>
+                                <button type="button" class="btn btn-primary" onclick="toggleFullscreenScriptEditor()" style="padding: 6px 15px; font-size: 0.9em;">关闭全屏</button>
+                            </div>
+                        </div>
+                        <div id="fullscreen-script-monaco-editor" style="flex: 1; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 历史脚本列表（保留原位置，但内容移到侧边栏） -->
+            <div class="section full-width" style="display: none;">
+                <div class="scripts-list-header">
+                    <div class="section-title">历史脚本</div>
+                    <button class="btn btn-secondary btn-small" onclick="loadScriptsList()" title="刷新列表">
+                        <span>🔄</span>
+                        <span>刷新</span>
+                    </button>
+                </div>
+                <div class="scripts-list" id="scripts-list">
+                    <div class="scripts-list-empty">正在加载...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 保存弹窗 -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">保存脚本</div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em;">
+                        <input type="checkbox" id="backup_to_netdisk" checked>
+                        <span>备份到百度网盘</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">保存名称</label>
+                    <input type="text" id="export_filename" placeholder="auto_job.sh" style="width: 100%;">
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em;">
+                        <input type="checkbox" id="save_config">
+                        <span>同时保存当前配置</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeSaveModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmSave()">确认保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast">
+        <span class="toast-icon">✓</span>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- 模型配置模态框 -->
+    <div id="model-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">配置模型</div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">模型名称 *</label>
+                    <input type="text" id="model-name" class="form-input" placeholder="例如: rtdetrv2">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">下载方式</label>
+                    <select id="model-download-type" class="form-input" onchange="toggleModelDownloadType()">
+                        <option value="url">从 URL 下载</option>
+                        <option value="baidu">从百度网盘下载</option>
+                    </select>
+                </div>
+                <div id="model-url-group" class="form-group">
+                    <label class="form-label">模型 URL *</label>
+                    <input type="text" id="model-url" class="form-input" placeholder="例如: https://github.com/.../model.pth">
+                </div>
+                <div id="model-filename-group" class="form-group">
+                    <label class="form-label">文件名（可选）</label>
+                    <input type="text" id="model-filename" class="form-input" placeholder="例如: model.pth">
+                </div>
+                <div id="model-remote-path-group" class="form-group" style="display: none;">
+                    <label class="form-label">百度网盘路径 *</label>
+                    <input type="text" id="model-remote-path" class="form-input" placeholder="例如: /apps/autodl/model/rtdetrv2/">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">本地保存路径 *</label>
+                    <input type="text" id="model-local-path" class="form-input" placeholder="例如: /root/autodl-tmp/model/rtdetrv2">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModelModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitModelForm()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 仓库配置模态框 -->
+    <div id="repo-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">配置代码仓库</div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">仓库名称 *</label>
+                    <input type="text" id="repo-name" class="form-input" placeholder="例如: hq_det">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Git URL *</label>
+                    <input type="text" id="repo-url" class="form-input" placeholder="例如: git@github.com:user/repo.git">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">安装命令（每行一个）</label>
+                    <textarea id="repo-install-cmds" class="form-input" rows="6" placeholder="例如:&#10;pip install -e .&#10;pip install torch"></textarea>
+                    <small style="color: #666; font-size: 0.85em;">每行一个命令，留空表示无安装命令</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRepoModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitRepoForm()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const repos = {{ repos|tojson }};
+        const models = {{ models|tojson }};
+        // categoryGroups 现在从 API 加载（全局共享），不再从模板变量获取
+        let snapshots = [{ id: '', url: '', bdnd_path: '', name: '', cache: true, download_type: 'id' }];
+
+        // 初始化模型列表
+        function initModels() {
+            const container = document.getElementById('models-container');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            Object.keys(models).forEach(modelName => {
+                const card = document.createElement('div');
+                card.className = 'repo-card';
+                card.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;">
+                            <input type="checkbox" class="model-select" data-model="${modelName}">
+                            <span style="font-weight: 500;">${modelName}</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.85em; color: #666;">
+                            <input type="checkbox" class="model-cache" data-model="${modelName}" checked>
+                            <span>缓存</span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initRepos();
+            initModels();
+        });
+
+        // 初始化仓库列表
+        function initRepos() {
+            const container = document.getElementById('repos-container');
+            container.innerHTML = '';
+            
+            Object.keys(repos).forEach(repoName => {
+                const repo = repos[repoName];
+                const card = document.createElement('div');
+                card.className = 'repo-card';
+                card.innerHTML = `
+                    <div class="repo-info">
+                        <div class="repo-name">${repoName}</div>
+                        <div class="repo-url">${repo.url}</div>
+                    </div>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="repo-select" data-repo="${repoName}" checked>
+                            <span>选择</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="repo-install" data-repo="${repoName}" ${repo.install_cmds.length > 0 ? 'checked' : ''}>
+                            <span>安装</span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 切换部分启用/禁用
+        function toggleSection(section) {
+            const content = document.getElementById(section + '-content');
+            if (section === 'merge') {
+                const enableSnapshots = document.getElementById('enable_snapshots').checked;
+                if (!enableSnapshots) {
+                    document.getElementById('enable_merge').checked = false;
+                    content.classList.add('disabled');
+                } else {
+                    content.classList.toggle('disabled', !document.getElementById('enable_merge').checked);
+                }
+            } else {
+                content.classList.toggle('disabled', !document.getElementById('enable_' + section).checked);
+            }
+            
+            // 如果禁用快照，也禁用汇总
+            if (section === 'snapshots' && !document.getElementById('enable_snapshots').checked) {
+                document.getElementById('enable_merge').checked = false;
+                document.getElementById('merge-content').classList.add('disabled');
+            }
+        }
+
+        // 添加快照
+        function addSnapshot() {
+            snapshots.push({ id: '', url: '', bdnd_path: '', name: '', cache: true, download_type: 'id' });
+            renderSnapshots();
+        }
+
+        // 删除快照
+        function removeSnapshot(index) {
+            snapshots.splice(index, 1);
+            renderSnapshots();
+        }
+
+        // 渲染快照列表
+        function renderSnapshots() {
+            const container = document.getElementById('snapshots-container');
+            container.innerHTML = '';
+            
+            snapshots.forEach((snapshot, index) => {
+                // 确保 cache 属性存在，默认为 true
+                if (snapshot.cache === undefined) {
+                    snapshot.cache = true;
+                }
+                
+                // 确定下载类型（优先使用download_type，否则根据已有字段判断）
+                const downloadType = snapshot.download_type || 
+                    (snapshot.bdnd_path && snapshot.bdnd_path.trim() ? 'bdnd' : 
+                     (snapshot.url && snapshot.url.trim() ? 'url' : 'id'));
+                
+                const item = document.createElement('div');
+                item.className = 'snapshot-item';
+                item.innerHTML = `
+                    <div class="form-group" style="flex: 0 0 120px; margin-bottom: 10px;">
+                        <label class="form-label">下载方式</label>
+                        <select class="snapshot-download-type" data-index="${index}" style="padding: 6px 10px; border: 1px solid #e9ecef; border-radius: 4px; font-size: 0.9em; width: 100%; background: white; cursor: pointer;">
+                            <option value="id" ${downloadType === 'id' ? 'selected' : ''}>快照ID</option>
+                            <option value="url" ${downloadType === 'url' ? 'selected' : ''}>URL下载</option>
+                            <option value="bdnd" ${downloadType === 'bdnd' ? 'selected' : ''}>百度网盘</option>
+                        </select>
+                    </div>
+                    <div class="form-group snapshot-id-group" style="flex: 1; ${downloadType !== 'id' ? 'display: none;' : ''}">
+                        <label class="form-label">快照 ${index + 1} ID *</label>
+                        <input type="text" class="snapshot-id" data-index="${index}" value="${snapshot.id}" placeholder="例如: 5409">
+                    </div>
+                    <div class="form-group snapshot-url-group" style="flex: 1; ${downloadType !== 'url' ? 'display: none;' : ''}">
+                        <label class="form-label">快照 ${index + 1} URL *</label>
+                        <input type="text" class="snapshot-url" data-index="${index}" value="${snapshot.url || ''}" placeholder="例如: https://example.com/dataset.zip">
+                    </div>
+                    <div class="form-group snapshot-bdnd-group" style="flex: 1; ${downloadType !== 'bdnd' ? 'display: none;' : ''}">
+                        <label class="form-label">快照 ${index + 1} 百度网盘路径 *</label>
+                        <input type="text" class="snapshot-bdnd-path" data-index="${index}" value="${snapshot.bdnd_path || ''}" placeholder="例如: /apps/autodl/datasets/coco.zip 或 /apps/autodl/datasets/coco">
+                        <small style="color: #666; font-size: 0.85em;">支持压缩包(.zip)或已解压的目录</small>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">快照 ${index + 1} 名称（可选）</label>
+                        <input type="text" class="snapshot-name" data-index="${index}" value="${snapshot.name}" placeholder="例如: test_dataset">
+                    </div>
+                    <div class="form-group" style="flex: 0 0 auto; display: flex; align-items: center; gap: 8px; margin-top: 20px;">
+                        <input type="checkbox" class="snapshot-cache" data-index="${index}" ${snapshot.cache ? 'checked' : ''} id="snapshot-cache-${index}">
+                        <label for="snapshot-cache-${index}" style="margin: 0; cursor: pointer; font-size: 0.9em;">启用缓存</label>
+                    </div>
+                    ${snapshots.length > 1 ? `<button class="remove-btn" onclick="removeSnapshot(${index})" style="align-self: flex-end; margin-bottom: 0;">删除</button>` : ''}
+                `;
+                container.appendChild(item);
+            });
+
+            // 绑定下载方式切换事件
+            document.querySelectorAll('.snapshot-download-type').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    const downloadType = e.target.value;
+                    snapshots[index].download_type = downloadType;
+                    
+                    // 切换显示/隐藏对应的输入框
+                    const item = e.target.closest('.snapshot-item');
+                    const idGroup = item.querySelector('.snapshot-id-group');
+                    const urlGroup = item.querySelector('.snapshot-url-group');
+                    
+                    const bdndGroup = item.querySelector('.snapshot-bdnd-group');
+                    if (downloadType === 'id') {
+                        idGroup.style.display = 'flex';
+                        urlGroup.style.display = 'none';
+                        bdndGroup.style.display = 'none';
+                        snapshots[index].url = '';
+                        snapshots[index].bdnd_path = '';
+                    } else if (downloadType === 'url') {
+                        idGroup.style.display = 'none';
+                        urlGroup.style.display = 'flex';
+                        bdndGroup.style.display = 'none';
+                        snapshots[index].id = '';
+                        snapshots[index].bdnd_path = '';
+                    } else if (downloadType === 'bdnd') {
+                        idGroup.style.display = 'none';
+                        urlGroup.style.display = 'none';
+                        bdndGroup.style.display = 'flex';
+                        snapshots[index].id = '';
+                        snapshots[index].url = '';
+                    }
+                });
+            });
+
+            // 绑定输入事件
+            document.querySelectorAll('.snapshot-id').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    snapshots[index].id = e.target.value;
+                });
+            });
+            
+            document.querySelectorAll('.snapshot-url').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    snapshots[index].url = e.target.value;
+                });
+            });
+            
+            document.querySelectorAll('.snapshot-bdnd-path').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    snapshots[index].bdnd_path = e.target.value;
+                });
+            });
+
+            document.querySelectorAll('.snapshot-name').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    snapshots[index].name = e.target.value;
+                });
+            });
+
+            // 绑定缓存选项事件
+            document.querySelectorAll('.snapshot-cache').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    snapshots[index].cache = e.target.checked;
+                });
+            });
+        }
+
+        // 初始化类别映射组下拉框（从API加载，合并全局和用户自己的）
+        async function initCategoryGroups() {
+            const select = document.getElementById('category_group');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">（不映射）</option>';
+            
+            try {
+                // 同时获取全局和用户自己的类别映射组
+                const [globalResponse, userResponse] = await Promise.all([
+                    fetch('/api/category-groups'),
+                    fetch('/api/user/category-groups')
+                ]);
+                
+                const globalData = await globalResponse.json();
+                const userData = await userResponse.json();
+                
+                // 合并并去重
+                const allGroups = [];
+                if (globalResponse.ok && globalData.category_groups) {
+                    allGroups.push(...globalData.category_groups);
+                }
+                if (userResponse.ok && userData.category_groups) {
+                    allGroups.push(...userData.category_groups);
+                }
+                
+                // 去重并保持顺序
+                const uniqueGroups = [...new Set(allGroups)];
+                
+                uniqueGroups.forEach(groupName => {
+                    const option = document.createElement('option');
+                    option.value = groupName;
+                    option.textContent = groupName;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('加载类别映射组失败:', error);
+            }
+        }
+
+
+        // 切换随机划分
+        function toggleSplitRatio() {
+            const container = document.getElementById('split_ratio_container');
+            container.style.display = document.getElementById('use_random_split').checked ? 'block' : 'none';
+        }
+
+        // 更新划分比例显示
+        function updateSplitValue() {
+            const value = document.getElementById('split_ratio').value;
+            document.getElementById('split_value').textContent = Math.round(value * 100) + '%';
+        }
+
+        // 生成脚本
+        async function generateScript() {
+            const enableRepos = document.getElementById('enable_repos').checked;
+            const enableSnapshots = document.getElementById('enable_snapshots').checked;
+            const enableMerge = document.getElementById('enable_merge').checked;
+            const dataOnly = false; // 如果选择了仓库，就不是仅数据模式
+
+            const selectedRepos = [];
+            if (enableRepos && !dataOnly) {
+                document.querySelectorAll('.repo-select:checked').forEach(checkbox => {
+                    const repoName = checkbox.dataset.repo;
+                    const install = document.querySelector(`.repo-install[data-repo="${repoName}"]`).checked;
+                    selectedRepos.push({ name: repoName, install: install });
+                });
+            }
+
+            const validSnapshots = enableSnapshots ? snapshots.filter(s => 
+                (s.id && s.id.trim()) || 
+                (s.url && s.url.trim()) || 
+                (s.bdnd_path && s.bdnd_path.trim())
+            ) : [];
+            const enableModels = document.getElementById('enable_models')?.checked || false;
+            const selectedModels = enableModels ? Array.from(document.querySelectorAll('.model-select:checked')).map(cb => {
+                const modelName = cb.dataset.model;
+                const cacheCheckbox = document.querySelector(`.model-cache[data-model="${modelName}"]`);
+                return {
+                    name: modelName,
+                    cache: cacheCheckbox ? cacheCheckbox.checked : true
+                };
+            }) : [];
+            const outputDir = document.getElementById('output_dir').value;
+            const datasetName = document.getElementById('dataset_name').value;
+            const useRandomSplit = document.getElementById('use_random_split').checked;
+            const splitRatio = useRandomSplit ? parseFloat(document.getElementById('split_ratio').value) : null;
+            // 只有在使用随机划分时才设置 split_seed
+            const splitSeed = useRandomSplit ? (parseInt(document.getElementById('split_seed').value) || 42) : null;
+            const categoryGroup = document.getElementById('category_group').value;
+
+            // 验证
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = '';
+
+            if (enableMerge && !enableSnapshots) {
+                alertContainer.innerHTML = '<div class="alert alert-error">数据集生成需要先启用数据快照下载</div>';
+                return;
+            }
+
+            if (enableSnapshots && validSnapshots.length === 0) {
+                alertContainer.innerHTML = '<div class="alert alert-error">请至少添加一个数据快照ID</div>';
+                return;
+            }
+
+            if (!enableRepos && !enableSnapshots && !enableMerge) {
+                alertContainer.innerHTML = '<div class="alert alert-error">请至少启用一个功能模块</div>';
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('script-output').style.display = 'none';
+            const saveBtn = document.getElementById('save-btn');
+            if (saveBtn) saveBtn.style.display = 'none';
+
+            try {
+                console.log('Sending generate request...', {
+                    repos: selectedRepos,
+                    snapshots: validSnapshots,
+                    output_dir: outputDir,
+                    dataset_name: datasetName,
+                    split_ratio: splitRatio,
+                    split_seed: splitSeed,
+                    category_group: categoryGroup,
+                    models: selectedModels,
+                    data_only: dataOnly,
+                    enable_repos: enableRepos,
+                    enable_snapshots: enableSnapshots,
+                    enable_merge: enableMerge
+                });
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+                
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        repos: selectedRepos,
+                        snapshots: validSnapshots,
+                        output_dir: outputDir,
+                        dataset_name: datasetName,
+                        split_ratio: splitRatio,
+                        ...(splitRatio !== null && { split_seed: splitSeed }),
+                        category_group: categoryGroup,
+                        models: selectedModels,
+                        data_only: dataOnly,
+                        enable_repos: enableRepos,
+                        enable_snapshots: enableSnapshots,
+                        enable_merge: enableMerge
+                    }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    // 如果响应不成功，尝试获取错误信息
+                    let errorMsg = '生成失败';
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+                    } catch (e) {
+                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    document.getElementById('loading').style.display = 'none';
+                    alertContainer.innerHTML = `<div class="alert alert-error">${errorMsg}</div>`;
+                    console.error('Generate script error:', errorMsg);
+                    return;
+                }
+
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.script) {
+                    document.getElementById('script-output').style.display = 'block';
+                    window.generatedScript = data.script;
+                    
+                    // 初始化或更新Monaco编辑器
+                    if (!scriptMonacoEditor) {
+                        await initScriptMonacoEditor();
+                    }
+                    if (scriptMonacoEditor) {
+                        scriptMonacoEditor.setValue(data.script);
+                    }
+                    
+                    document.getElementById('save-btn').style.display = 'inline-flex';
+                    document.getElementById('copy-btn').style.display = 'flex';
+                    window.generatedData = {
+                        repos: selectedRepos,
+                        snapshots: validSnapshots,
+                        output_dir: outputDir,
+                        dataset_name: datasetName,
+                        split_ratio: splitRatio,
+                        ...(splitRatio !== null && { split_seed: splitSeed }),
+                        category_group: categoryGroup,
+                        models: selectedModels,
+                        data_only: dataOnly,
+                        enable_repos: enableRepos,
+                        enable_snapshots: enableSnapshots,
+                        enable_merge: enableMerge
+                    };
+                } else {
+                    alertContainer.innerHTML = `<div class="alert alert-error">${data.error || '生成失败：未返回脚本内容'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                let errorMsg = '网络错误或服务器无响应';
+                if (error.name === 'AbortError') {
+                    errorMsg = '请求超时（30秒），请检查服务器状态或网络连接';
+                } else if (error.message) {
+                    errorMsg = error.message;
+                }
+                alertContainer.innerHTML = `<div class="alert alert-error">错误: ${errorMsg}</div>`;
+                console.error('Generate script exception:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+
+        // 获取默认文件名（包含当前日期时间）
+        function getDefaultFilename() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
+            return `auto_job_${year}${month}${day}_${hour}${minute}.sh`;
+        }
+
+        // 打开下载弹窗
+        function saveScript() {
+            if (!window.generatedData) {
+                alert('请先生成脚本');
+                return;
+            }
+            
+            // 设置默认文件名
+            document.getElementById('export_filename').value = getDefaultFilename();
+            document.getElementById('backup_to_netdisk').checked = true;
+            document.getElementById('save_config').checked = false;
+            
+            // 显示弹窗
+            document.getElementById('saveModal').style.display = 'flex';
+        }
+
+        // 关闭保存弹窗
+        function closeSaveModal() {
+            document.getElementById('saveModal').style.display = 'none';
+        }
+
+        // 确认保存
+        async function confirmSave() {
+            const backupToNetdisk = document.getElementById('backup_to_netdisk').checked;
+            const saveConfig = document.getElementById('save_config').checked;
+            const filename = document.getElementById('export_filename').value.trim() || getDefaultFilename();
+            
+            try {
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ...window.generatedData,
+                        filename: filename,
+                        backup_to_netdisk: backupToNetdisk,
+                        script_content: window.scriptMonacoEditor ? window.scriptMonacoEditor.getValue() : window.generatedScript
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showToast('脚本保存成功！', 'success');
+                    
+                    // 如果选择保存配置，同时保存配置
+                    if (saveConfig) {
+                        await saveCurrentConfig(filename.replace('.sh', ''));
+                    }
+                    
+                    closeSaveModal();
+                    
+                    // 刷新脚本列表
+                    setTimeout(() => {
+                        if (document.querySelector('.sidebar-tab.active').textContent === '历史脚本') {
+                            loadScriptsList();
+                        }
+                    }, 500);
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('错误: ' + error.message, 'error');
+            }
+        }
+
+        // 保存当前配置
+        async function saveCurrentConfig(configName) {
+            try {
+                // 收集所有配置
+                const config = {
+                    repos: Array.from(document.querySelectorAll('.repo-select:checked')).map(cb => ({
+                        name: cb.dataset.repo,
+                        install: document.querySelector(`.repo-install[data-repo="${cb.dataset.repo}"]`).checked
+                    })),
+                    snapshots: snapshots.filter(s => 
+                        (s.id && s.id.trim()) || 
+                        (s.url && s.url.trim()) || 
+                        (s.bdnd_path && s.bdnd_path.trim())
+                    ),
+                    output_dir: document.getElementById('output_dir').value,
+                    dataset_name: document.getElementById('dataset_name').value,
+                    use_random_split: document.getElementById('use_random_split').checked,
+                    split_ratio: document.getElementById('use_random_split').checked ? parseFloat(document.getElementById('split_ratio').value) : null,
+                    split_seed: document.getElementById('use_random_split').checked ? parseInt(document.getElementById('split_seed').value) || 42 : 42,
+                    category_group: document.getElementById('category_group').value,
+                    models: Array.from(document.querySelectorAll('.model-select:checked')).map(cb => {
+                        const modelName = cb.dataset.model;
+                        const cacheCheckbox = document.querySelector(`.model-cache[data-model="${modelName}"]`);
+                        return {
+                            name: modelName,
+                            cache: cacheCheckbox ? cacheCheckbox.checked : true
+                        };
+                    }),
+                    enable_repos: document.getElementById('enable_repos').checked,
+                    enable_snapshots: document.getElementById('enable_snapshots').checked,
+                    enable_models: document.getElementById('enable_models').checked,
+                    enable_merge: document.getElementById('enable_merge').checked
+                };
+                
+                const response = await fetch('/api/configs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: configName,
+                        config: config
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showToast('配置保存成功！', 'success');
+                    if (document.querySelector('.sidebar-tab.active').textContent === '历史配置') {
+                        loadConfigsList();
+                    }
+                }
+            } catch (error) {
+                console.error('Save config error:', error);
+            }
+        }
+
+        // ==================== Monaco Editor 初始化 ====================
+        let scriptMonacoEditor = null;
+        let fullscreenScriptMonacoEditor = null;
+        let isScriptFullscreen = false;
+
+        // 初始化脚本Monaco Editor
+        async function initScriptMonacoEditor() {
+            if (typeof monaco === 'undefined') {
+                console.error('Monaco Editor未加载，使用备用方案');
+                return;
+            }
+
+            const editorContainer = document.getElementById('script-monaco-editor');
+            if (!editorContainer) {
+                console.error('Script editor container not found');
+                return;
+            }
+
+            // 如果已经创建过，直接返回
+            if (scriptMonacoEditor) {
+                return;
+            }
+
+            // 创建主编辑器
+            scriptMonacoEditor = monaco.editor.create(editorContainer, {
+                value: window.generatedScript || '',
+                language: 'shell',
+                theme: 'vs-dark',
+                fontSize: 14,
+                minimap: { enabled: true },
+                automaticLayout: true,
+                wordWrap: 'on',
+                scrollBeyondLastLine: false,
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: true,
+                tabSize: 4,
+                insertSpaces: true,
+                formatOnPaste: true,
+                formatOnType: true
+            });
+
+            // 监听内容变化
+            scriptMonacoEditor.onDidChangeModelContent(() => {
+                window.generatedScript = scriptMonacoEditor.getValue();
+            });
+            
+            // 保存到全局
+            window.scriptMonacoEditor = scriptMonacoEditor;
+        }
+
+        // 切换全屏脚本编辑器
+        function toggleFullscreenScriptEditor() {
+            const modal = document.getElementById('fullscreen-script-editor-modal');
+            
+            if (!isScriptFullscreen) {
+                // 进入全屏
+                modal.style.display = 'flex';
+                isScriptFullscreen = true;
+                
+                // 创建全屏编辑器
+                setTimeout(() => {
+                    if (!fullscreenScriptMonacoEditor) {
+                        const content = scriptMonacoEditor ? scriptMonacoEditor.getValue() : (window.generatedScript || '');
+                        
+                        fullscreenScriptMonacoEditor = monaco.editor.create(document.getElementById('fullscreen-script-monaco-editor'), {
+                            value: content,
+                            language: 'shell',
+                            theme: 'vs-dark',
+                            fontSize: 16,
+                            minimap: { enabled: true },
+                            automaticLayout: true,
+                            wordWrap: 'on',
+                            scrollBeyondLastLine: false,
+                            suggestOnTriggerCharacters: true,
+                            quickSuggestions: true,
+                            tabSize: 4,
+                            insertSpaces: true
+                        });
+                    } else {
+                        // 同步内容
+                        fullscreenScriptMonacoEditor.setValue(scriptMonacoEditor ? scriptMonacoEditor.getValue() : (window.generatedScript || ''));
+                    }
+                }, 100);
+            } else {
+                // 退出全屏，同步内容回主编辑器
+                if (fullscreenScriptMonacoEditor && scriptMonacoEditor) {
+                    scriptMonacoEditor.setValue(fullscreenScriptMonacoEditor.getValue());
+                    window.generatedScript = fullscreenScriptMonacoEditor.getValue();
+                }
+                modal.style.display = 'none';
+                isScriptFullscreen = false;
+            }
+        }
+
+        // 确保函数在全局作用域
+        window.toggleFullscreenScriptEditor = toggleFullscreenScriptEditor;
+
+        // 复制脚本
+        async function copyScript() {
+            let scriptContent = window.generatedScript;
+            
+            // 优先从Monaco编辑器获取内容
+            if (scriptMonacoEditor) {
+                scriptContent = scriptMonacoEditor.getValue();
+            }
+            
+            if (!scriptContent) {
+                alert('请先生成脚本');
+                return;
+            }
+            
+            const success = await copyToClipboard(scriptContent);
+            
+            if (success) {
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '已复制！';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#17a2b8';
+                }, 2000);
+            } else {
+                alert('复制失败，请手动选择并复制脚本内容');
+            }
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 加载脚本列表
+        async function loadScriptsList() {
+            const listContainer = document.getElementById('scripts-list');
+            listContainer.innerHTML = '<div class="scripts-list-empty">正在加载...</div>';
+            
+            try {
+                const response = await fetch('/api/scripts');
+                const data = await response.json();
+                
+                if (response.ok && data.files && data.files.length > 0) {
+                    listContainer.innerHTML = '';
+                    data.files.forEach(file => {
+                        const item = document.createElement('div');
+                        item.className = 'script-file-item';
+                        
+                        const modifiedDate = new Date(file.modified);
+                        const formattedDate = modifiedDate.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        const fileSize = (file.size / 1024).toFixed(2) + ' KB';
+                        
+                        const ownerInfo = file.owner ? `<span style="color: #666; font-size: 0.85em;">所有者: ${escapeHtml(file.owner)}</span>` : '';
+                        item.innerHTML = `
+                            <div class="script-file-info">
+                                <div class="script-file-name">${escapeHtml(file.filename)}</div>
+                                <div class="script-file-meta">
+                                    <span>大小: ${fileSize}</span>
+                                    <span>修改时间: ${formattedDate}</span>
+                                    ${ownerInfo}
+                                </div>
+                            </div>
+                            <div class="script-file-actions">
+                                <button class="btn-link btn-copy-link" onclick="copyScriptLink('${escapeHtml(file.filename)}', this)" title="复制下载链接">
+                                    <span>📋</span>
+                                    <span>复制链接</span>
+                                </button>
+                                <button class="btn-link" onclick="downloadScriptFile('${escapeHtml(file.filename)}')" title="直接下载">
+                                    <span>⬇️</span>
+                                    <span>下载</span>
+                                </button>
+                                <button class="btn-link btn-delete-link" onclick="deleteScriptFile('${escapeHtml(file.filename)}', this)" title="删除脚本">
+                                    <span>🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                            </div>
+                        `;
+                        listContainer.appendChild(item);
+                    });
+                } else {
+                    listContainer.innerHTML = '<div class="scripts-list-empty">暂无历史脚本</div>';
+                }
+            } catch (error) {
+                listContainer.innerHTML = `<div class="scripts-list-empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 复制文本到剪贴板（兼容性处理）
+        async function copyToClipboard(text) {
+            // 方法1: 使用现代 Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (err) {
+                    console.warn('Clipboard API failed, trying fallback:', err);
+                }
+            }
+            
+            // 方法2: 使用传统的 execCommand 方法（降级方案）
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                if (successful) {
+                    return true;
+                } else {
+                    throw new Error('execCommand failed');
+                }
+            } catch (err) {
+                console.error('All copy methods failed:', err);
+                return false;
+            }
+        }
+
+        // 复制脚本链接
+        async function copyScriptLink(filename, button) {
+            try {
+                const response = await fetch(`/api/scripts/${encodeURIComponent(filename)}/download`);
+                const data = await response.json();
+                
+                if (response.ok && data.download_url) {
+                    const success = await copyToClipboard(data.download_url);
+                    
+                    if (success) {
+                        // 更新按钮状态
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '<span>✓</span><span>已复制</span>';
+                        button.classList.add('copied');
+                        
+                        showToast('链接已复制到剪贴板', 'success');
+                        
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                            button.classList.remove('copied');
+                        }, 2000);
+                    } else {
+                        // 如果复制失败，显示链接让用户手动复制
+                        const linkText = data.download_url;
+                        const userConfirmed = confirm(`复制失败，请手动复制以下链接：\n\n${linkText}\n\n点击确定后，链接将显示在页面上。`);
+                        if (userConfirmed) {
+                            // 创建一个临时输入框显示链接
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = linkText;
+                            input.style.position = 'fixed';
+                            input.style.left = '-9999px';
+                            document.body.appendChild(input);
+                            input.select();
+                            try {
+                                document.execCommand('copy');
+                                showToast('链接已复制', 'success');
+                            } catch (e) {
+                                showToast('请手动复制链接', 'warning');
+                            }
+                            document.body.removeChild(input);
+                        }
+                    }
+                } else {
+                    showToast('获取链接失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('复制失败: ' + error.message, 'error');
+            }
+        }
+
+        // 下载脚本文件（通过token）
+        async function downloadScriptFile(filename) {
+            try {
+                // 先获取下载token
+                const response = await fetch(`/api/scripts/${encodeURIComponent(filename)}/download`);
+                const data = await response.json();
+                
+                if (response.ok && data.download_url) {
+                    // 使用相对路径打开下载链接
+                    window.open(data.download_url, '_blank');
+                } else {
+                    showToast('获取下载链接失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('下载失败: ' + error.message, 'error');
+            }
+        }
+
+        // 删除脚本文件
+        async function deleteScriptFile(filename, button) {
+            // 确认删除
+            if (!confirm(`确定要删除脚本 "${filename}" 吗？此操作不可恢复。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/scripts/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('脚本删除成功', 'success');
+                    // 刷新列表
+                    loadScriptsList();
+                } else {
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // 显示 Toast 提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            if (toast && toastMessage) {
+                toastMessage.textContent = message;
+                toast.className = `toast ${type}`;
+                toast.style.display = 'flex';
+                
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 切换侧边栏
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+            
+            // 如果打开侧边栏，自动加载当前标签的内容
+            if (sidebar.classList.contains('open')) {
+                const activeTab = document.querySelector('.sidebar-tab.active');
+                if (activeTab && activeTab.textContent === '历史脚本') {
+                    loadScriptsList();
+                } else {
+                    loadConfigsList();
+                }
+            }
+        }
+
+        // 关闭侧边栏
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+
+        // 切换侧边栏标签
+        function switchSidebarTab(tab, button) {
+            // 更新标签状态
+            document.querySelectorAll('.sidebar-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (button) {
+                button.classList.add('active');
+            }
+            
+            // 更新内容显示
+            document.querySelectorAll('.sidebar-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const tabContent = document.getElementById(tab + '-tab');
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+            
+            // 加载对应内容
+            if (tab === 'scripts') {
+                loadScriptsList();
+            } else if (tab === 'configs') {
+                loadConfigsList();
+            } else if (tab === 'settings') {
+                {% if is_admin %}
+                loadAccountsManagement();
+                loadCategoryGroupsManagement();
+                {% endif %}
+                loadUserCategoryGroupsManagement();
+                loadSystemConfig();
+                loadModelsManagement();
+                loadReposManagement();
+            }
+        }
+
+        // 加载配置列表
+        async function loadConfigsList() {
+            const listContainer = document.getElementById('configs-list');
+            listContainer.innerHTML = '<div class="scripts-list-empty">正在加载...</div>';
+            
+            try {
+                const response = await fetch('/api/configs');
+                const data = await response.json();
+                
+                if (response.ok && data.configs && data.configs.length > 0) {
+                    listContainer.innerHTML = '';
+                    data.configs.forEach(config => {
+                        const item = document.createElement('div');
+                        item.className = 'script-file-item';
+                        
+                        const modifiedDate = new Date(config.modified);
+                        const formattedDate = modifiedDate.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        const ownerInfo = config.owner ? `<span style="color: #666; font-size: 0.85em;">所有者: ${escapeHtml(config.owner)}</span>` : '';
+                        item.innerHTML = `
+                            <div class="script-file-info">
+                                <div class="script-file-name">${escapeHtml(config.filename)}</div>
+                                <div class="script-file-meta">
+                                    <span>修改时间: ${formattedDate}</span>
+                                    ${ownerInfo}
+                                </div>
+                            </div>
+                            <div class="script-file-actions">
+                                <button class="btn-link btn-copy-link" onclick="loadConfig('${escapeHtml(config.filename)}')" title="加载配置">
+                                    <span>📥</span>
+                                    <span>加载</span>
+                                </button>
+                                <button class="btn-link btn-delete-link" onclick="deleteConfig('${escapeHtml(config.filename)}', this)" title="删除配置">
+                                    <span>🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                            </div>
+                        `;
+                        listContainer.appendChild(item);
+                    });
+                } else {
+                    listContainer.innerHTML = '<div class="scripts-list-empty">暂无历史配置</div>';
+                }
+            } catch (error) {
+                listContainer.innerHTML = `<div class="scripts-list-empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载配置到界面
+        async function loadConfig(configName) {
+            try {
+                const response = await fetch('/api/configs');
+                const data = await response.json();
+                
+                if (response.ok && data.configs) {
+                    const config = data.configs.find(c => c.filename === configName);
+                    if (!config) {
+                        showToast('配置不存在', 'error');
+                        return;
+                    }
+                    
+                    const cfg = config.config;
+                    
+                    // 加载配置到界面
+                    // 仓库
+                    document.getElementById('enable_repos').checked = cfg.enable_repos || false;
+                    document.querySelectorAll('.repo-select').forEach(cb => {
+                        cb.checked = cfg.repos?.some(r => r.name === cb.dataset.repo) || false;
+                    });
+                    cfg.repos?.forEach(r => {
+                        const installCb = document.querySelector(`.repo-install[data-repo="${r.name}"]`);
+                        if (installCb) installCb.checked = r.install || false;
+                    });
+                    
+                    // 快照
+                    document.getElementById('enable_snapshots').checked = cfg.enable_snapshots || false;
+                    snapshots = (cfg.snapshots || []).map(s => {
+                        // 确保每个快照都有 cache 属性
+                        if (typeof s === 'object' && s !== null) {
+                            return { 
+                                ...s, 
+                                cache: s.cache !== undefined ? s.cache : true,
+                                url: s.url || '',
+                                bdnd_path: s.bdnd_path || '',
+                                download_type: s.download_type || 
+                                    (s.bdnd_path && s.bdnd_path.trim() ? 'bdnd' : 
+                                     (s.url && s.url.trim() ? 'url' : 'id'))
+                            };
+                        }
+                        // 向后兼容：如果是旧格式，转换为新格式
+                        return { id: s.id || '', url: '', bdnd_path: '', name: s.name || '', cache: true, download_type: 'id' };
+                    });
+                    if (snapshots.length === 0) {
+                        snapshots = [{ id: '', url: '', bdnd_path: '', name: '', cache: true, download_type: 'id' }];
+                    }
+                    renderSnapshots();
+                    
+                    // 模型
+                    document.getElementById('enable_models').checked = cfg.enable_models || false;
+                    document.querySelectorAll('.model-select').forEach(cb => {
+                        const modelName = cb.dataset.model;
+                        // 支持两种格式：字符串数组或对象数组
+                        const isSelected = cfg.models?.some(m => {
+                            if (typeof m === 'string') {
+                                return m === modelName;
+                            } else if (m && m.name) {
+                                return m.name === modelName;
+                            }
+                            return false;
+                        }) || false;
+                        cb.checked = isSelected;
+                        
+                        // 设置缓存选项
+                        const cacheCheckbox = document.querySelector(`.model-cache[data-model="${modelName}"]`);
+                        if (cacheCheckbox) {
+                            const modelConfig = cfg.models?.find(m => {
+                                if (typeof m === 'string') {
+                                    return m === modelName;
+                                } else if (m && m.name) {
+                                    return m.name === modelName;
+                                }
+                                return false;
+                            });
+                            if (modelConfig && typeof modelConfig === 'object' && 'cache' in modelConfig) {
+                                cacheCheckbox.checked = modelConfig.cache !== false;
+                            } else {
+                                cacheCheckbox.checked = true; // 默认启用缓存
+                            }
+                        }
+                    });
+                    
+                    // 数据集生成
+                    document.getElementById('enable_merge').checked = cfg.enable_merge || false;
+                    document.getElementById('output_dir').value = cfg.output_dir || '/root/autodl-tmp';
+                    document.getElementById('dataset_name').value = cfg.dataset_name || 'dataset';
+                    document.getElementById('use_random_split').checked = cfg.use_random_split || false;
+                    if (cfg.split_ratio) {
+                        document.getElementById('split_ratio').value = cfg.split_ratio;
+                        updateSplitValue();
+                    }
+                    if (cfg.split_seed) {
+                        document.getElementById('split_seed').value = cfg.split_seed;
+                    }
+                    
+                    // 类别映射
+                    document.getElementById('category_group').value = cfg.category_group || '';
+                    
+                    // 更新界面状态
+                    toggleSection('repos');
+                    toggleSection('snapshots');
+                    toggleSection('models');
+                    toggleSection('merge');
+                    
+                    showToast('配置加载成功', 'success');
+                    closeSidebar();
+                } else {
+                    showToast('加载配置失败', 'error');
+                }
+            } catch (error) {
+                showToast('加载配置失败: ' + error.message, 'error');
+            }
+        }
+
+        // 删除配置
+        async function deleteConfig(configName, button) {
+            if (!confirm(`确定要删除配置 "${configName}" 吗？此操作不可恢复。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/configs/${encodeURIComponent(configName)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('配置删除成功', 'success');
+                    loadConfigsList();
+                } else {
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('删除失败: ' + error.message, 'error');
+            }
+        }
+
+
+        // 登出功能
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('登出失败');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // 即使失败也跳转到登录页
+                window.location.href = '/login';
+            }
+        }
+
+        // 检查登录状态
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/scripts', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                if (response.status === 401) {
+                    // 未登录，跳转到登录页
+                    window.location.href = '/login';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Check login error:', error);
+                return true; // 如果检查失败，继续加载页面
+            }
+        }
+
+        // ==================== 设置管理功能 ====================
+        
+        // 加载账户管理列表（仅管理员）
+        {% if is_admin %}
+        async function loadAccountsManagement() {
+            const listContainer = document.getElementById('accounts-management-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '<div class="scripts-list-empty">正在加载...</div>';
+            
+            try {
+                const response = await fetch('/api/admin/accounts');
+                const data = await response.json();
+                
+                if (response.ok && data.accounts) {
+                    const accounts = data.accounts;
+                    if (accounts.length === 0) {
+                        listContainer.innerHTML = '<div class="scripts-list-empty">暂无账户</div>';
+                        return;
+                    }
+                    
+                    listContainer.innerHTML = '';
+                    accounts.forEach(account => {
+                        const item = document.createElement('div');
+                        item.className = 'script-file-item';
+                        const isAdmin = account.is_admin;
+                        item.innerHTML = `
+                            <div class="script-file-info">
+                                <div class="script-file-name">${escapeHtml(account.username)} ${isAdmin ? '<span style="color: #667eea; font-size: 0.85em;">(管理员)</span>' : ''}</div>
+                            </div>
+                            <div class="script-file-actions">
+                                ${!isAdmin ? `
+                                <button class="btn-link" onclick="resetAccountPassword('${escapeHtml(account.username)}')" title="重置密码">
+                                    <span>🔑</span>
+                                    <span>重置密码</span>
+                                </button>
+                                <button class="btn-link btn-delete-link" onclick="deleteAccount('${escapeHtml(account.username)}')" title="删除账户">
+                                    <span>🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                                ` : ''}
+                            </div>
+                        `;
+                        listContainer.appendChild(item);
+                    });
+                } else {
+                    listContainer.innerHTML = '<div class="scripts-list-empty">加载失败</div>';
+                }
+            } catch (error) {
+                listContainer.innerHTML = `<div class="scripts-list-empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 显示添加账户模态框
+        function showAddAccountModal() {
+            const username = prompt('请输入新账户用户名:');
+            if (!username) return;
+            
+            const password = prompt('请输入新账户密码:');
+            if (!password) {
+                showToast('密码不能为空', 'error');
+                return;
+            }
+            
+            addAccount(username, password);
+        }
+
+        // 添加账户
+        async function addAccount(username, password) {
+            try {
+                const response = await fetch('/api/admin/accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('账户创建成功', 'success');
+                    loadAccountsManagement();
+                } else {
+                    showToast('创建失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('创建失败: ' + error.message, 'error');
+            }
+        }
+
+        // 删除账户
+        async function deleteAccount(accountName) {
+            if (!confirm(`确定要删除账户 "${accountName}" 吗？此操作不可恢复。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/accounts/${encodeURIComponent(accountName)}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('账户删除成功', 'success');
+                    loadAccountsManagement();
+                } else {
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // 重置账户密码
+        async function resetAccountPassword(accountName) {
+            const newPassword = prompt(`请输入账户 "${accountName}" 的新密码:`);
+            if (!newPassword) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/accounts/${encodeURIComponent(accountName)}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        password: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('密码重置成功', 'success');
+                } else {
+                    showToast('重置失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('重置失败: ' + error.message, 'error');
+            }
+        }
+        {% endif %}
+        
+        // 修改密码
+        async function changePassword() {
+            const oldPassword = document.getElementById('old-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            
+            if (!oldPassword || !newPassword) {
+                showToast('请填写完整信息', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        old_password: oldPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('密码修改成功', 'success');
+                    document.getElementById('old-password').value = '';
+                    document.getElementById('new-password').value = '';
+                } else {
+                    showToast('密码修改失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('密码修改失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载模型管理列表
+        async function loadModelsManagement() {
+            const listContainer = document.getElementById('models-management-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '<div class="scripts-list-empty">正在加载...</div>';
+            
+            try {
+                const response = await fetch('/api/user/models');
+                const data = await response.json();
+                
+                if (response.ok && data.models) {
+                    const models = data.models;
+                    if (Object.keys(models).length === 0) {
+                        listContainer.innerHTML = '<div class="scripts-list-empty">暂无模型配置</div>';
+                        return;
+                    }
+                    
+                    listContainer.innerHTML = '';
+                    Object.keys(models).forEach(modelName => {
+                        const item = document.createElement('div');
+                        item.className = 'script-file-item';
+                        const model = models[modelName];
+                        const configInfo = model.url ? `URL: ${model.url}` : `路径: ${model.remote_path || 'N/A'}`;
+                        item.innerHTML = `
+                            <div class="script-file-info">
+                                <div class="script-file-name">${escapeHtml(modelName)}</div>
+                                <div class="script-file-meta">
+                                    <span>${escapeHtml(configInfo)}</span>
+                                </div>
+                            </div>
+                            <div class="script-file-actions">
+                                <button class="btn-link" onclick="editModel('${escapeHtml(modelName)}')" title="编辑">
+                                    <span>✏️</span>
+                                    <span>编辑</span>
+                                </button>
+                                <button class="btn-link btn-delete-link" onclick="deleteModel('${escapeHtml(modelName)}')" title="删除">
+                                    <span>🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                            </div>
+                        `;
+                        listContainer.appendChild(item);
+                    });
+                } else {
+                    listContainer.innerHTML = '<div class="scripts-list-empty">加载失败</div>';
+                }
+            } catch (error) {
+                listContainer.innerHTML = `<div class="scripts-list-empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载仓库管理列表
+        async function loadReposManagement() {
+            const listContainer = document.getElementById('repos-management-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '<div class="scripts-list-empty">正在加载...</div>';
+            
+            try {
+                const response = await fetch('/api/user/repos');
+                const data = await response.json();
+                
+                if (response.ok && data.repos) {
+                    const repos = data.repos;
+                    if (Object.keys(repos).length === 0) {
+                        listContainer.innerHTML = '<div class="scripts-list-empty">暂无仓库配置</div>';
+                        return;
+                    }
+                    
+                    listContainer.innerHTML = '';
+                    Object.keys(repos).forEach(repoName => {
+                        const item = document.createElement('div');
+                        item.className = 'script-file-item';
+                        const repo = repos[repoName];
+                        item.innerHTML = `
+                            <div class="script-file-info">
+                                <div class="script-file-name">${escapeHtml(repoName)}</div>
+                                <div class="script-file-meta">
+                                    <span>${escapeHtml(repo.url || 'N/A')}</span>
+                                </div>
+                            </div>
+                            <div class="script-file-actions">
+                                <button class="btn-link" onclick="editRepo('${escapeHtml(repoName)}')" title="编辑">
+                                    <span>✏️</span>
+                                    <span>编辑</span>
+                                </button>
+                                <button class="btn-link btn-delete-link" onclick="deleteRepo('${escapeHtml(repoName)}')" title="删除">
+                                    <span>🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                            </div>
+                        `;
+                        listContainer.appendChild(item);
+                    });
+                } else {
+                    listContainer.innerHTML = '<div class="scripts-list-empty">加载失败</div>';
+                }
+            } catch (error) {
+                listContainer.innerHTML = `<div class="scripts-list-empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 当前编辑的模型名称（用于区分添加和编辑）
+        let currentEditingModel = null;
+
+        // 显示添加/编辑模型模态框
+        function showAddModelModal(modelName = null) {
+            currentEditingModel = modelName;
+            const modal = document.getElementById('model-modal');
+            
+            // 清空表单
+            document.getElementById('model-name').value = modelName || '';
+            document.getElementById('model-url').value = '';
+            document.getElementById('model-filename').value = '';
+            document.getElementById('model-remote-path').value = '';
+            document.getElementById('model-local-path').value = '';
+            document.getElementById('model-download-type').value = 'url';
+            
+            // 如果是编辑模式，加载现有数据
+            if (modelName) {
+                loadModelDataForEdit(modelName);
+            } else {
+                toggleModelDownloadType();
+            }
+            
+            // 设置标题
+            document.querySelector('#model-modal .modal-header').textContent = modelName ? '编辑模型' : '添加模型';
+            
+            // 显示模态框
+            modal.style.display = 'flex';
+        }
+
+        // 加载模型数据用于编辑
+        async function loadModelDataForEdit(modelName) {
+            try {
+                const response = await fetch('/api/user/models');
+                const data = await response.json();
+                
+                if (response.ok && data.models && data.models[modelName]) {
+                    const model = data.models[modelName];
+                    document.getElementById('model-name').value = modelName;
+                    document.getElementById('model-local-path').value = model.local_path || '';
+                    
+                    if (model.url) {
+                        document.getElementById('model-download-type').value = 'url';
+                        document.getElementById('model-url').value = model.url || '';
+                        document.getElementById('model-filename').value = model.filename || '';
+                    } else if (model.remote_path) {
+                        document.getElementById('model-download-type').value = 'baidu';
+                        document.getElementById('model-remote-path').value = model.remote_path || '';
+                    }
+                    
+                    toggleModelDownloadType();
+                }
+            } catch (error) {
+                showToast('加载模型数据失败: ' + error.message, 'error');
+            }
+        }
+
+        // 切换模型下载方式
+        function toggleModelDownloadType() {
+            const downloadType = document.getElementById('model-download-type').value;
+            const urlGroup = document.getElementById('model-url-group');
+            const filenameGroup = document.getElementById('model-filename-group');
+            const remotePathGroup = document.getElementById('model-remote-path-group');
+            
+            if (downloadType === 'url') {
+                urlGroup.style.display = 'block';
+                filenameGroup.style.display = 'block';
+                remotePathGroup.style.display = 'none';
+            } else {
+                urlGroup.style.display = 'none';
+                filenameGroup.style.display = 'none';
+                remotePathGroup.style.display = 'block';
+            }
+        }
+
+        // 关闭模型模态框
+        function closeModelModal() {
+            document.getElementById('model-modal').style.display = 'none';
+            currentEditingModel = null;
+        }
+
+        // 点击模态框外部关闭
+        document.addEventListener('click', function(event) {
+            const modelModal = document.getElementById('model-modal');
+            const repoModal = document.getElementById('repo-modal');
+            if (event.target === modelModal) {
+                closeModelModal();
+            }
+            if (event.target === repoModal) {
+                closeRepoModal();
+            }
+        });
+
+        // 提交模型表单
+        function submitModelForm() {
+            const name = document.getElementById('model-name').value.trim();
+            const downloadType = document.getElementById('model-download-type').value;
+            const localPath = document.getElementById('model-local-path').value.trim();
+            
+            if (!name) {
+                showToast('模型名称不能为空', 'error');
+                return;
+            }
+            
+            if (!localPath) {
+                showToast('本地路径不能为空', 'error');
+                return;
+            }
+            
+            const modelConfig = {};
+            
+            if (downloadType === 'url') {
+                const url = document.getElementById('model-url').value.trim();
+                if (!url) {
+                    showToast('模型 URL 不能为空', 'error');
+                    return;
+                }
+                modelConfig.url = url;
+                modelConfig.local_path = localPath;
+                const filename = document.getElementById('model-filename').value.trim();
+                if (filename) {
+                    modelConfig.filename = filename;
+                }
+            } else {
+                const remotePath = document.getElementById('model-remote-path').value.trim();
+                if (!remotePath) {
+                    showToast('百度网盘路径不能为空', 'error');
+                    return;
+                }
+                modelConfig.remote_path = remotePath;
+                modelConfig.local_path = localPath;
+            }
+            
+            saveModel(name, modelConfig);
+            closeModelModal();
+        }
+
+        // 保存模型
+        async function saveModel(name, config) {
+            try {
+                const response = await fetch('/api/user/models', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        config: config
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('模型配置保存成功', 'success');
+                    loadModelsManagement();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // 编辑模型（使用模态框）
+        function editModel(modelName) {
+            showAddModelModal(modelName);
+        }
+
+        // 删除模型
+        async function deleteModel(modelName) {
+            if (!confirm(`确定要删除模型 "${modelName}" 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/user/models/${encodeURIComponent(modelName)}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('模型删除成功', 'success');
+                    loadModelsManagement();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // 当前编辑的仓库名称（用于区分添加和编辑）
+        let currentEditingRepo = null;
+
+        // 显示添加/编辑仓库模态框
+        function showAddRepoModal(repoName = null) {
+            currentEditingRepo = repoName;
+            const modal = document.getElementById('repo-modal');
+            
+            // 清空表单
+            document.getElementById('repo-name').value = repoName || '';
+            document.getElementById('repo-url').value = '';
+            document.getElementById('repo-install-cmds').value = '';
+            
+            // 如果是编辑模式，加载现有数据
+            if (repoName) {
+                loadRepoDataForEdit(repoName);
+            }
+            
+            // 设置标题
+            document.querySelector('#repo-modal .modal-header').textContent = repoName ? '编辑代码仓库' : '添加代码仓库';
+            
+            // 显示模态框
+            modal.style.display = 'flex';
+        }
+
+        // 加载仓库数据用于编辑
+        async function loadRepoDataForEdit(repoName) {
+            try {
+                const response = await fetch('/api/user/repos');
+                const data = await response.json();
+                
+                if (response.ok && data.repos && data.repos[repoName]) {
+                    const repo = data.repos[repoName];
+                    document.getElementById('repo-name').value = repoName;
+                    document.getElementById('repo-url').value = repo.url || '';
+                    document.getElementById('repo-install-cmds').value = (repo.install_cmds || []).join('\n');
+                }
+            } catch (error) {
+                showToast('加载仓库数据失败: ' + error.message, 'error');
+            }
+        }
+
+        // 关闭仓库模态框
+        function closeRepoModal() {
+            document.getElementById('repo-modal').style.display = 'none';
+            currentEditingRepo = null;
+        }
+
+        // 提交仓库表单
+        function submitRepoForm() {
+            const name = document.getElementById('repo-name').value.trim();
+            const url = document.getElementById('repo-url').value.trim();
+            const installCmdsStr = document.getElementById('repo-install-cmds').value.trim();
+            
+            if (!name) {
+                showToast('仓库名称不能为空', 'error');
+                return;
+            }
+            
+            if (!url) {
+                showToast('仓库 URL 不能为空', 'error');
+                return;
+            }
+            
+            const installCmds = installCmdsStr ? installCmdsStr.split('\n').filter(cmd => cmd.trim()) : [];
+            
+            saveRepo(name, { url: url, install_cmds: installCmds });
+            closeRepoModal();
+        }
+
+        // 保存仓库
+        async function saveRepo(name, config) {
+            try {
+                const response = await fetch('/api/user/repos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        config: config
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('仓库配置保存成功', 'success');
+                    loadReposManagement();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // 编辑仓库（使用模态框）
+        function editRepo(repoName) {
+            showAddRepoModal(repoName);
+        }
+
+        // 删除仓库
+        async function deleteRepo(repoName) {
+            if (!confirm(`确定要删除仓库 "${repoName}" 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/user/repos/${encodeURIComponent(repoName)}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('仓库删除成功', 'success');
+                    loadReposManagement();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // 标签输入框管理函数
+        function initTagsInput(containerId, inputId) {
+            const container = document.getElementById(containerId);
+            let input = document.getElementById(inputId);
+            if (!container || !input) return null;
+            
+            let tags = [];
+            
+            // 添加标签
+            function addTag(tagText) {
+                const trimmed = tagText.trim();
+                if (!trimmed || tags.includes(trimmed)) return;
+                
+                tags.push(trimmed);
+                renderTags();
+                if (input) input.value = '';
+            }
+            
+            // 删除标签
+            function removeTag(tagText) {
+                tags = tags.filter(t => t !== tagText);
+                renderTags();
+            }
+            
+            // 渲染标签
+            function renderTags() {
+                // 保存当前输入框的值
+                const currentValue = input ? input.value : '';
+                
+                // 清空容器
+                container.innerHTML = '';
+                
+                // 添加标签
+                tags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    tagElement.className = 'tag-item';
+                    tagElement.innerHTML = `
+                        <span>${escapeHtml(tag)}</span>
+                        <span class="tag-remove" onclick="removeTagFromContainer('${containerId}', '${escapeHtml(tag)}')">×</span>
+                    `;
+                    container.appendChild(tagElement);
+                });
+                
+                // 重新创建输入框
+                input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'tags-input';
+                input.id = inputId;
+                input.placeholder = '输入映射组名称后按回车添加';
+                input.value = currentValue;
+                
+                // 绑定事件
+                input.addEventListener('keydown', handleKeyDown);
+                input.addEventListener('blur', handleBlur);
+                
+                container.appendChild(input);
+                input.focus();
+            }
+            
+            // 处理键盘事件
+            function handleKeyDown(e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    if (input.value.trim()) {
+                        addTag(input.value);
+                    }
+                } else if (e.key === 'Backspace' && input.value === '' && tags.length > 0) {
+                    removeTag(tags[tags.length - 1]);
+                }
+            }
+            
+            // 处理失焦事件
+            function handleBlur() {
+                if (input && input.value.trim()) {
+                    addTag(input.value);
+                }
+            }
+            
+            // 初始化
+            input.addEventListener('keydown', handleKeyDown);
+            input.addEventListener('blur', handleBlur);
+            
+            // 返回获取和设置标签的函数
+            return {
+                getTags: () => [...tags],
+                setTags: (newTags) => {
+                    tags = [...newTags];
+                    renderTags();
+                }
+            };
+        }
+
+        // 全局标签管理器
+        let globalCategoryGroupsManager = null;
+        let userCategoryGroupsManager = null;
+
+        // 从容器中删除标签（全局函数，供标签点击调用）
+        function removeTagFromContainer(containerId, tagText) {
+            if (containerId === 'category-groups-tags-container' && globalCategoryGroupsManager) {
+                const tags = globalCategoryGroupsManager.getTags();
+                globalCategoryGroupsManager.setTags(tags.filter(t => t !== tagText));
+            } else if (containerId === 'user-category-groups-tags-container' && userCategoryGroupsManager) {
+                const tags = userCategoryGroupsManager.getTags();
+                userCategoryGroupsManager.setTags(tags.filter(t => t !== tagText));
+            }
+        }
+
+        // 加载类别映射组管理（仅管理员）
+        {% if is_admin %}
+        async function loadCategoryGroupsManagement() {
+            if (!globalCategoryGroupsManager) {
+                globalCategoryGroupsManager = initTagsInput('category-groups-tags-container', 'category-groups-input');
+                if (!globalCategoryGroupsManager) return;
+            }
+            
+            try {
+                const response = await fetch('/api/category-groups');
+                const data = await response.json();
+                
+                if (response.ok && data.category_groups) {
+                    globalCategoryGroupsManager.setTags(data.category_groups);
+                } else {
+                    globalCategoryGroupsManager.setTags([]);
+                }
+            } catch (error) {
+                console.error('加载类别映射组失败:', error);
+                if (globalCategoryGroupsManager) {
+                    globalCategoryGroupsManager.setTags([]);
+                }
+            }
+        }
+
+        // 保存类别映射组
+        async function saveCategoryGroups() {
+            if (!globalCategoryGroupsManager) return;
+            
+            const categoryGroups = globalCategoryGroupsManager.getTags();
+            
+            try {
+                const response = await fetch('/api/category-groups', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        category_groups: categoryGroups
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('类别映射组保存成功', 'success');
+                    // 重新加载页面以更新下拉框
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+        {% endif %}
+
+        // 加载用户自己的类别映射组管理（所有用户）
+        async function loadUserCategoryGroupsManagement() {
+            if (!userCategoryGroupsManager) {
+                userCategoryGroupsManager = initTagsInput('user-category-groups-tags-container', 'user-category-groups-input');
+                if (!userCategoryGroupsManager) return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/category-groups');
+                const data = await response.json();
+                
+                if (response.ok && data.category_groups) {
+                    userCategoryGroupsManager.setTags(data.category_groups);
+                } else {
+                    userCategoryGroupsManager.setTags([]);
+                }
+            } catch (error) {
+                console.error('加载用户类别映射组失败:', error);
+                if (userCategoryGroupsManager) {
+                    userCategoryGroupsManager.setTags([]);
+                }
+            }
+        }
+
+        // 保存用户自己的类别映射组
+        async function saveUserCategoryGroups() {
+            if (!userCategoryGroupsManager) return;
+            
+            const categoryGroups = userCategoryGroupsManager.getTags();
+            
+            try {
+                const response = await fetch('/api/user/category-groups', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        category_groups: categoryGroups
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('我的类别映射组保存成功', 'success');
+                    // 重新加载页面以更新下拉框
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载系统配置
+        async function loadSystemConfig() {
+            try {
+                const response = await fetch('/api/user/system-config');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // 加载 .env_config.json 文件内容
+                    document.getElementById('env-config-content').value = data.env_config_content || '';
+                    
+                    // 加载Git SSH路径
+                    document.getElementById('git-ssh-path').value = data.git_ssh_path || '';
+                    
+                    // 加载数据集缓存路径
+                    document.getElementById('dataset-cache-path').value = data.dataset_cache_path || 'cache/datasets';
+                }
+            } catch (error) {
+                console.error('加载系统配置失败:', error);
+            }
+        }
+
+        // 保存系统配置
+        async function saveSystemConfig() {
+            const envConfigContent = document.getElementById('env-config-content').value.trim();
+            const gitSshPath = document.getElementById('git-ssh-path').value.trim();
+            const datasetCachePath = document.getElementById('dataset-cache-path').value.trim() || 'cache/datasets';
+            
+            // 验证JSON格式（如果填写了内容）
+            if (envConfigContent) {
+                try {
+                    JSON.parse(envConfigContent);
+                } catch (e) {
+                    showToast('JSON格式错误，请检查 .env_config.json 内容', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch('/api/user/system-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        env_config_content: envConfigContent,
+                        git_ssh_path: gitSshPath,
+                        dataset_cache_path: datasetCachePath
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('系统配置保存成功', 'success');
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // 初始化
+        (async function() {
+            const isLoggedIn = await checkLoginStatus();
+            if (isLoggedIn) {
+                initRepos();
+                await initCategoryGroups();
+                renderSnapshots();
+                toggleSection('repos');
+                toggleSection('snapshots');
+                toggleSection('merge');
+                
+                // 页面加载时自动加载脚本列表
+                loadScriptsList();
+                
+                // 初始化Monaco Editor（延迟加载，等待Monaco加载完成）
+                if (typeof require !== 'undefined') {
+                    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+                    require(['vs/editor/editor.main'], async () => {
+                        // Monaco已加载，等待脚本生成后再初始化编辑器
+                        console.log('Monaco Editor loaded');
+                    });
+                } else {
+                    // 如果Monaco未加载，等待加载
+                    const checkMonaco = setInterval(() => {
+                        if (typeof monaco !== 'undefined') {
+                            clearInterval(checkMonaco);
+                            console.log('Monaco Editor loaded');
+                        }
+                    }, 100);
+                }
+            }
+        })();
+        
+        // 确保Monaco Editor正确加载
+        if (typeof require !== 'undefined') {
+            require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+            require(['vs/editor/editor.main'], () => {
+                console.log('Monaco Editor initialized');
+            });
+        }
+    </script>
+</body>
+</html>

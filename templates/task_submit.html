@@ -1,0 +1,3572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务提交 - AutoDL 弹性部署</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <!-- Monaco Editor -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 10px 16px;
+            background: transparent;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        /* 紧凑布局：两列布局 */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 0.95em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-toggle {
+            background: #6c757d;
+            color: white;
+            font-size: 0.85em;
+            padding: 6px 12px;
+            white-space: nowrap;
+        }
+
+        .token-status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .token-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .token-status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .token-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .deployment-list {
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+
+        .deployment-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .deployment-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .deployment-table th {
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.75em;
+        }
+
+        .deployment-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.75em;
+            color: #495057;
+            vertical-align: top;
+        }
+        
+        /* 部署列表表格自适应宽度 */
+        #deployments-list {
+            width: 100%;
+            overflow-x: auto;
+        }
+        
+        #deployments-list .deployment-table {
+            width: 100%;
+            min-width: 100%;
+            table-layout: auto;
+        }
+
+        .deployment-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .deployment-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .deployment-table code {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.7em;
+        }
+
+        .deployment-table .btn {
+            margin-top: 4px;
+            padding: 2px 8px;
+            font-size: 0.7em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+
+        .status-running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+
+        .status-running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .gpu-stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            min-width: 100%;
+        }
+
+        .gpu-stock-container {
+            overflow-x: auto;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .gpu-stock-table th,
+        .gpu-stock-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .gpu-stock-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .gpu-stock-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .stock-available {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .stock-low {
+            color: #ffc107;
+            font-weight: 600;
+        }
+
+        .stock-zero {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        /* 弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 5px;
+            align-items: stretch;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+
+        /* 移动端响应式 */
+        @media (max-width: 768px) {
+            .container {
+                min-height: 100vh;
+            }
+
+            .header {
+                padding: 10px 15px;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.2em;
+            }
+
+            .nav-buttons {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .btn-nav {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+
+            .nav-tabs {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .nav-tab {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+
+            .content-area {
+                padding: 15px;
+            }
+
+            .section {
+                padding: 15px;
+            }
+
+            .deployment-list {
+                grid-template-columns: 1fr;
+            }
+
+            .gpu-stock-table {
+                font-size: 0.85em;
+            }
+
+            .gpu-stock-table th,
+            .gpu-stock-table td {
+                padding: 8px;
+            }
+
+            .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+        }
+
+        /* 配置列表样式 */
+        .scripts-list {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .script-file-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .script-file-item:hover {
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+
+        .script-file-info {
+            flex: 1;
+        }
+
+        .script-file-name {
+            font-weight: 600;
+            font-size: 1em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .script-file-meta {
+            font-size: 0.85em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .script-file-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-link {
+            background: transparent;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-copy-link {
+            color: #28a745;
+        }
+
+        .btn-copy-link:hover {
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .btn-delete-link {
+            color: #dc3545;
+        }
+
+        .btn-delete-link:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        .scripts-list-empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        /* 历史配置弹窗样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.3em;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .modal-filters select,
+        .modal-filters input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .config-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .config-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .config-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        }
+
+        .config-info {
+            flex: 1;
+        }
+
+        .config-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .config-meta {
+            font-size: 0.85em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .config-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .config-actions button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+
+        .btn-load {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #5568d3;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .btn-move {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-move:hover {
+            background: #218838;
+        }
+
+        .modal-pagination {
+            padding: 15px 20px;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pagination-controls button {
+            padding: 6px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .pagination-controls button:hover:not(:disabled) {
+            background: #f8f9fa;
+            border-color: #667eea;
+        }
+
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .save-group-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .save-group-input input {
+            flex: 1;
+            padding: 6px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .save-group-input button {
+            padding: 6px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .save-group-input button:hover {
+            background: #218838;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes toastSlideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1em;
+            }
+
+            .nav-tab {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+
+            .section-title {
+                font-size: 1em;
+            }
+
+            .content-area {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <h1>⚡ 任务提交</h1>
+                <div class="nav-buttons">
+                    <a href="/" class="btn-nav">主菜单</a>
+                    <a href="/task_setup" class="btn-nav">任务设置</a>
+                    <button class="btn-nav" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="submit" onclick="switchTab('submit', this)">实验提交</button>
+                <button class="nav-tab" data-tab="records" onclick="switchTab('records', this)">提交记录</button>
+                <button class="nav-tab" data-tab="deployments" onclick="switchTab('deployments', this)">部署列表</button>
+                <button class="nav-tab" data-tab="resources" onclick="switchTab('resources', this)">资源池</button>
+                <button class="nav-tab" data-tab="settings" onclick="switchTab('settings', this)">设置</button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            {% if not autodl_available %}
+            <div class="section">
+                <div class="section-title">⚠️ 警告</div>
+                <p>autodl-api 库未安装。请运行 <code>pip install autodl-api</code> 安装。</p>
+            </div>
+            {% else %}
+            <!-- 实验提交标签页 -->
+            <div id="tab-submit" class="tab-content active">
+                <div class="section">
+                    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <span>创建新部署</span>
+                        <button class="btn btn-primary" onclick="openConfigModal()" style="width: auto; padding: 6px 12px; font-size: 0.9em;">历史配置</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">部署名称 *</label>
+                            <input type="text" id="deployment_name" class="form-input" placeholder="my-deployment" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">部署类型 *</label>
+                            <select id="deployment_type" class="form-input">
+                                <option value="Job" selected>Job</option>
+                                <option value="ReplicaSet">ReplicaSet</option>
+                                <option value="Container">Container</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">镜像 *</label>
+                            <select id="deployment_image" class="form-input">
+                                <option value="">请先获取镜像列表</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">GPU 数量 *</label>
+                            <input type="number" id="gpu_num" class="form-input" value="1" min="1" placeholder="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">数据中心列表</label>
+                        <small style="color: #666; font-size: 0.85em; display: block; margin-bottom: 6px;">可多选，留空则自动选择</small>
+                        <div id="dc-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: white; border: 1px solid #e9ecef; border-radius: 6px;">
+                            <!-- 数据中心复选框将动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">GPU 类型 *</label>
+                        <div id="gpu-checkboxes" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; padding: 8px; background: white; border: 1px solid #e9ecef; border-radius: 6px;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="RTX-5090" class="gpu-type-checkbox">
+                                <span>RTX 5090</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="RTX-4090" class="gpu-type-checkbox" checked>
+                                <span>RTX 4090</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="RTX-4090D" class="gpu-type-checkbox">
+                                <span>RTX 4090D</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="RTX-4080" class="gpu-type-checkbox">
+                                <span>RTX 4080</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="RTX-3090" class="gpu-type-checkbox">
+                                <span>RTX 3090</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="RTX-3080" class="gpu-type-checkbox">
+                                <span>RTX 3080</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="RTX-3070" class="gpu-type-checkbox">
+                                <span>RTX 3070</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="V100" class="gpu-type-checkbox">
+                                <span>V100</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="A100" class="gpu-type-checkbox">
+                                <span>A100</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="H100" class="gpu-type-checkbox">
+                                <span>H100</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="L20" class="gpu-type-checkbox">
+                                <span>L20</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="L40" class="gpu-type-checkbox">
+                                <span>L40</span>
+                            </label>
+                        </div>
+                        <small style="color: #666; font-size: 0.85em; margin-top: 6px; display: block;">可多选，留空则自动选择</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">构建脚本（可选）</label>
+                        <select id="history_script" class="form-input">
+                            <option value="">不使用构建脚本</option>
+                        </select>
+                        <small style="color: #666; font-size: 0.85em; display: block; margin-top: 4px;">选择脚本后，将自动下载为 build.sh</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">环境变量 *</label>
+                        <div id="env-vars-container" style="margin-bottom: 8px;">
+                            <!-- 环境变量输入框将动态添加 -->
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="addEnvVar()" style="width: auto; background: #28a745; padding: 8px 15px; font-size: 0.9em;">+ 添加环境变量</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">运行脚本代码 *</label>
+                        <div id="code-editor-container" style="position: relative; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 10px 15px; border-bottom: 2px solid #dee2e6;">
+                                <span style="font-size: 0.9em; color: #495057; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                    <span>💻</span>
+                                    <span>代码编辑器</span>
+                                </span>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <select id="run_script_type" onchange="updateRunScriptEditor()" style="padding: 6px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.9em; background: white; color: #495057; cursor: pointer; font-weight: 600; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                        <option value="shell" selected>Shell</option>
+                                        <option value="python">Python</option>
+                                    </select>
+                                    <button type="button" class="btn btn-primary" onclick="toggleFullscreenEditor()" style="padding: 6px 12px; font-size: 0.85em; width: auto;" title="全屏编辑">⛶ 全屏</button>
+                                </div>
+                            </div>
+                            <div id="monaco-editor" style="height: 300px; min-height: 250px;"></div>
+                            <div style="background: #f8f9fa; padding: 8px 15px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
+                                <small style="color: #6c757d; font-size: 0.85em;">保存路径: /root/run.sh 或 /root/run.py</small>
+                                <button type="button" class="btn btn-primary" onclick="loadDefaultRunScript()" style="padding: 6px 15px; font-size: 0.85em; width: auto;">加载默认模板</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 全屏编辑器 -->
+                    <div id="fullscreen-editor-modal" class="modal-overlay" style="display: none; z-index: 2000;">
+                        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid #dee2e6; background: #f8f9fa;">
+                                <span style="font-size: 1em; color: #495057; font-weight: 600;">全屏代码编辑器</span>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select id="fullscreen_script_type" onchange="updateFullscreenEditor()" style="padding: 6px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.9em; background: white; color: #495057; cursor: pointer;">
+                                        <option value="shell" selected>Shell</option>
+                                        <option value="python">Python</option>
+                                    </select>
+                                    <button type="button" class="btn btn-primary" onclick="toggleFullscreenEditor()" style="padding: 6px 15px; font-size: 0.9em;">关闭全屏</button>
+                                </div>
+                            </div>
+                            <div id="fullscreen-monaco-editor" style="flex: 1; width: 100%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="createDeployment()">创建部署</button>
+                        <button class="btn btn-primary" onclick="saveDeploymentConfig()" style="background: #28a745;">保存设置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提交记录标签页 -->
+            <div id="tab-records" class="tab-content">
+                <div class="section">
+                    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <span>提交记录</span>
+                        <button class="btn btn-primary" onclick="loadRecords()" style="width: auto; padding: 6px 12px; font-size: 0.9em;">刷新列表</button>
+                    </div>
+                    <div id="records-list" class="config-list">
+                        <div class="scripts-list-empty">正在加载...</div>
+                    </div>
+                    <div class="modal-pagination" style="justify-content: center; margin-top: 15px; padding: 15px 20px; border-top: 2px solid #e9ecef;">
+                        <div class="pagination-info" id="recordsPaginationInfo">第 1 页，共 1 页</div>
+                        <div class="pagination-controls" style="margin-left: 20px;">
+                            <button onclick="changeRecordsPage(-1)" id="recordsPrevPageBtn" style="padding: 6px 12px; border: 1px solid #ced4da; border-radius: 6px; background: white; cursor: pointer; font-size: 0.9em;">上一页</button>
+                            <span id="recordsPageInfo" style="margin: 0 10px; font-size: 0.9em;">1 / 1</span>
+                            <button onclick="changeRecordsPage(1)" id="recordsNextPageBtn" style="padding: 6px 12px; border: 1px solid #ced4da; border-radius: 6px; background: white; cursor: pointer; font-size: 0.9em;">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 部署列表标签页 -->
+            <div id="tab-deployments" class="tab-content">
+                <div class="section">
+                    <div class="section-title">
+                        <span>部署列表</span>
+                        <button class="btn btn-primary" onclick="loadDeployments()" style="margin-left: auto;">刷新列表</button>
+                    </div>
+                    <div id="deployments-list" class="deployment-list">
+                        <div class="loading">点击"刷新列表"加载部署信息</div>
+                    </div>
+                </div>
+            </div>
+            
+
+            <!-- 资源池标签页 -->
+            <div id="tab-resources" class="tab-content">
+                <div class="section">
+                    <div class="section-title">
+                        <span>GPU 资源池</span>
+                        <button class="btn btn-primary" onclick="loadGPUStock()" style="margin-left: auto;">刷新资源</button>
+                    </div>
+                    <div id="gpu-stock-content">
+                        <div class="loading">点击"刷新资源"加载 GPU 库存信息</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置标签页 -->
+            <div id="tab-settings" class="tab-content">
+                <div class="section">
+                    <div class="section-title">⚙️ Token 配置</div>
+                    <div id="token-status" class="token-status" style="display: none;">
+                        <span id="token-status-text"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">AutoDL API Token</label>
+                        <div class="input-group">
+                            <input type="password" id="api_token" class="form-input" placeholder="请输入 Token">
+                            <button type="button" class="btn btn-toggle" onclick="toggleTokenVisibility()" id="toggle-btn">显示</button>
+                        </div>
+                        <small style="color: #666; font-size: 0.85em; display: block; margin-top: 5px;">Token 将加密存储在服务器上</small>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="saveToken()">保存 Token</button>
+                        <button class="btn btn-primary" onclick="testConnection()">测试连接</button>
+                        <button class="btn btn-danger" onclick="deleteToken()">删除 Token</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Token 输入弹窗 -->
+    <div id="token-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">配置 AutoDL API Token</div>
+            <div class="form-group">
+                <label class="form-label">请输入您的 AutoDL API Token</label>
+                <input type="password" id="modal_token" class="form-input" placeholder="请输入 Token">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="saveTokenFromModal()">保存并连接</button>
+                <button class="btn" onclick="closeTokenModal()" style="background: #6c757d; color: white;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史配置弹窗 -->
+    <div id="configModal" class="modal-overlay" onclick="if(event.target === this) closeConfigModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>历史配置管理</h2>
+                <button class="modal-close" onclick="closeConfigModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-filters">
+                    <select id="configGroupFilter" onchange="loadConfigs()" style="min-width: 150px;">
+                        <option value="">全部分组</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadConfigs()" style="padding: 8px 15px;">刷新</button>
+                </div>
+                <div class="config-list" id="configList">
+                    <div class="scripts-list-empty">正在加载...</div>
+                </div>
+            </div>
+            <div class="modal-pagination" style="justify-content: center;">
+                <button class="btn btn-primary" onclick="loadConfigs()" style="padding: 8px 15px;">刷新列表</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 保存设置分组选择弹窗 -->
+    <div id="saveGroupModal" class="modal-overlay" onclick="if(event.target === this) closeSaveGroupModal()">
+        <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>保存配置到分组</h2>
+                <button class="modal-close" onclick="closeSaveGroupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">选择分组</label>
+                    <select id="saveGroupSelect" class="form-input">
+                        <option value="">默认（不分组）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">或创建新分组</label>
+                    <input type="text" id="newGroupName" class="form-input" placeholder="输入新分组名称">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="confirmSaveConfig()" style="flex: 1;">确认保存</button>
+                    <button class="btn btn-primary" onclick="closeSaveGroupModal()" style="background: #6c757d; flex: 1;">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动到分组弹窗 -->
+    <div id="moveGroupModal" class="modal-overlay" onclick="if(event.target === this) closeMoveGroupModal()">
+        <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>移动到分组</h2>
+                <button class="modal-close" onclick="closeMoveGroupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">选择分组</label>
+                    <select id="moveGroupSelect" class="form-input">
+                        <option value="">默认（不分组）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">或创建新分组</label>
+                    <input type="text" id="moveNewGroupName" class="form-input" placeholder="输入新分组名称">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="confirmMoveConfig()" style="flex: 1;">确认移动</button>
+                    <button class="btn btn-primary" onclick="closeMoveGroupModal()" style="background: #6c757d; flex: 1;">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tokenVisible = false;
+        let currentTab = 'submit';
+
+        // 页面加载时检查 Token 并自动连接
+        async function initPage() {
+            await checkLoginStatus();
+            await checkStoredToken();
+            await autoConnect();
+        }
+
+        // 检查登录状态
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/scripts', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Check login error:', error);
+            }
+        }
+
+        // 检查 Token 状态
+        async function checkStoredToken() {
+            try {
+                const response = await fetch('/api/user/autodl-token', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                const statusDiv = document.getElementById('token-status');
+                const statusText = document.getElementById('token-status-text');
+                
+                statusDiv.style.display = 'block';
+                if (data.has_token) {
+                    statusDiv.className = 'token-status success';
+                    statusText.textContent = '✓ Token 已配置（已加密存储）';
+                } else {
+                    statusDiv.className = 'token-status warning';
+                    statusText.textContent = '⚠ 未配置 Token';
+                }
+            } catch (error) {
+                console.error('Check token error:', error);
+            }
+        }
+
+        // 自动连接
+        async function autoConnect() {
+            try {
+                const response = await fetch('/api/user/autodl-token', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                
+                if (!data.has_token) {
+                    // 如果没有 Token，显示弹窗
+                    showTokenModal();
+                } else {
+                    // 如果有 Token，自动测试连接
+                    await testConnection(true);
+                }
+            } catch (error) {
+                console.error('Auto connect error:', error);
+            }
+        }
+
+        // 显示 Token 弹窗
+        function showTokenModal() {
+            document.getElementById('token-modal').classList.add('active');
+        }
+
+        // 关闭 Token 弹窗
+        function closeTokenModal() {
+            document.getElementById('token-modal').classList.remove('active');
+        }
+
+        // 从弹窗保存 Token
+        async function saveTokenFromModal() {
+            const token = document.getElementById('modal_token').value.trim();
+            if (!token) {
+                alert('请输入 Token');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/autodl-token', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ token: token })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('modal_token').value = '';
+                    closeTokenModal();
+                    await checkStoredToken();
+                    await testConnection(true);
+                } else {
+                    alert('保存失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('保存失败：' + error.message);
+            }
+        }
+
+        // 切换 Token 显示/隐藏
+        function toggleTokenVisibility() {
+            const tokenInput = document.getElementById('api_token');
+            const toggleBtn = document.getElementById('toggle-btn');
+            
+            if (tokenVisible) {
+                tokenInput.type = 'password';
+                toggleBtn.textContent = '显示';
+                tokenVisible = false;
+            } else {
+                tokenInput.type = 'text';
+                toggleBtn.textContent = '隐藏';
+                tokenVisible = true;
+            }
+        }
+
+        // 保存 Token
+        async function saveToken() {
+            const token = document.getElementById('api_token').value.trim();
+            if (!token) {
+                alert('请输入 Token');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/autodl-token', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ token: token })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Token 已保存');
+                    document.getElementById('api_token').value = '';
+                    if (tokenVisible) {
+                        toggleTokenVisibility();
+                    }
+                    await checkStoredToken();
+                    await testConnection(true);
+                    // 根据当前标签页刷新数据
+                    if (currentTab === 'deployments') {
+                        await loadDeployments();
+                    } else if (currentTab === 'resources') {
+                        await loadGPUStock();
+                    }
+                } else {
+                    alert('保存失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('保存失败：' + error.message);
+            }
+        }
+
+        // 删除 Token
+        async function deleteToken() {
+            if (!confirm('确定要删除已保存的 Token 吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/autodl-token', {
+                    method: 'DELETE',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Token 已删除');
+                    await checkStoredToken();
+                } else {
+                    alert('删除失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('删除失败：' + error.message);
+            }
+        }
+
+        // 测试连接
+        async function testConnection(silent = false) {
+            try {
+                const response = await fetch('/api/autodl/test', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    if (!silent) {
+                        alert('连接成功！');
+                    }
+                    // 更新状态
+                    const statusDiv = document.getElementById('token-status');
+                    const statusText = document.getElementById('token-status-text');
+                    statusDiv.className = 'token-status success';
+                    statusText.textContent = '✓ Token 已配置且连接正常';
+                } else {
+                    if (!silent) {
+                        alert('连接失败：' + (data.error || '未知错误'));
+                    }
+                    const statusDiv = document.getElementById('token-status');
+                    const statusText = document.getElementById('token-status-text');
+                    statusDiv.className = 'token-status error';
+                    statusText.textContent = '✗ 连接失败：' + (data.error || '未知错误');
+                }
+            } catch (error) {
+                if (!silent) {
+                    alert('连接失败：' + error.message);
+                }
+            }
+        }
+
+        // 切换标签页
+        function switchTab(tab, button) {
+            // 更新导航栏
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (button) {
+                button.classList.add('active');
+            } else {
+                document.querySelector(`.nav-tab[data-tab="${tab}"]`)?.classList.add('active');
+            }
+            
+            // 更新内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            currentTab = tab;
+            
+            // 根据标签页加载数据
+            if (tab === 'submit') {
+                // 进入实验提交标签页时自动加载镜像列表和历史脚本
+                loadHistoryScripts();
+                loadImages();
+            } else if (tab === 'deployments') {
+                // 进入部署列表标签页时自动加载部署列表
+                loadDeployments();
+            } else if (tab === 'records') {
+                loadRecords();
+            } else if (tab === 'deployments') {
+                loadDeployments();
+            } else if (tab === 'resources') {
+                loadGPUStock();
+            } else if (tab === 'settings') {
+                checkStoredToken();
+            }
+        }
+
+        // 加载镜像列表
+        async function loadImages() {
+            try {
+                const response = await fetch('/api/autodl/images', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    const select = document.getElementById('deployment_image');
+                    select.innerHTML = '<option value="">请选择镜像</option>';
+                    data.images.forEach(img => {
+                        const option = document.createElement('option');
+                        
+                        // 获取镜像名称（优先使用 name 字段，这是最常见的字段名）
+                        let imageName = null;
+                        if (img.name) {
+                            imageName = img.name;
+                        } else if (img.image_name) {
+                            imageName = img.image_name;
+                        } else if (img.display_name) {
+                            imageName = img.display_name;
+                        } else if (img.title) {
+                            imageName = img.title;
+                        } else if (img.repository) {
+                            imageName = img.repository;
+                        } else if (typeof img === 'string') {
+                            imageName = img;
+                        }
+                        
+                        // 优先获取UUID（用于提交到后端）- 这是API需要的
+                        const imageUuid = img.uuid || img.image_uuid || img.id || img.image_id || imageName;
+                        
+                        // 设置选项值（使用UUID，用于提交）
+                        option.value = imageUuid;
+                        
+                        // 设置显示文本（优先显示名称，如果没有名称才显示UUID）
+                        if (imageName && imageName !== imageUuid) {
+                            // 如果有名称且名称与UUID不同，显示名称
+                            option.textContent = imageName;
+                        } else {
+                            // 如果名称不存在或与UUID相同，显示UUID
+                            option.textContent = imageUuid || '未知镜像';
+                        }
+                        
+                        select.appendChild(option);
+                    });
+                    // 静默加载，不显示提示（自动加载时）
+                    if (currentTab === 'submit') {
+                        // 自动加载时不显示提示
+                    } else {
+                        alert('镜像列表加载成功！');
+                    }
+                } else {
+                    alert('加载镜像列表失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('加载镜像列表失败：' + error.message);
+            }
+        }
+
+        // 获取单个部署的SSH连接信息
+        async function getSSHInfoForDeployment(deploymentUuid) {
+            try {
+                const response = await fetch(`/api/autodl/deployment/${deploymentUuid}/ssh`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                
+                // 处理202状态（容器尚未分配）
+                if (response.status === 202) {
+                    return {
+                        status: 'pending',
+                        message: data.info || '容器尚未分配，正在排队中'
+                    };
+                }
+                
+                if (response.ok) {
+                    return {
+                        status: 'success',
+                        sshInfo: data.ssh_info || {}
+                    };
+                } else {
+                    return {
+                        status: 'error',
+                        message: data.error || '未知错误'
+                    };
+                }
+            } catch (error) {
+                return {
+                    status: 'error',
+                    message: error.message || '网络错误'
+                };
+            }
+        }
+
+        // 复制文本到剪贴板
+        // 复制文本到剪贴板
+        function copyToClipboard(text) {
+            // 处理转义字符，恢复原始文本
+            const unescapedText = text.replace(/\\'/g, "'").replace(/\\n/g, '\n');
+            
+            // 优先使用现代 Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(unescapedText).then(() => {
+                    showMessage('已复制到剪贴板！', 'success');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    // 降级到传统方法
+                    fallbackCopyToClipboard(unescapedText);
+                });
+            } else {
+                // 降级到传统方法
+                fallbackCopyToClipboard(unescapedText);
+            }
+        }
+        
+        // 降级复制方法（兼容旧浏览器）
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showMessage('已复制到剪贴板！', 'success');
+                } else {
+                    showMessage('复制失败，请手动复制', 'error');
+                }
+            } catch (err) {
+                console.error('复制失败:', err);
+                showMessage('复制失败，请手动复制', 'error');
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+        
+        // 显示消息提示
+        function showMessage(message, type = 'info') {
+            // 创建提示元素
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3';
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 24px;
+                background: ${bgColor};
+                color: white;
+                border-radius: 4px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-size: 14px;
+                animation: toastSlideIn 0.3s ease-out;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                toast.style.animation = 'toastSlideOut 0.3s ease-out';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // 停止部署
+        async function stopDeployment(deploymentUuid, button) {
+            if (!confirm('确定要停止该部署吗？')) {
+                return;
+            }
+            
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = '停止中...';
+            
+            try {
+                const response = await fetch(`/api/autodl/deployment/${deploymentUuid}/stop`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showMessage('部署已停止', 'success');
+                    // 刷新部署列表
+                    await loadDeployments();
+                } else {
+                    showMessage('停止失败: ' + (data.error || '未知错误'), 'error');
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                showMessage('停止失败: ' + error.message, 'error');
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+        
+        // 删除部署
+        async function deleteDeployment(deploymentUuid, button) {
+            if (!confirm('确定要删除该部署吗？此操作不可恢复！')) {
+                return;
+            }
+            
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = '删除中...';
+            
+            try {
+                const response = await fetch(`/api/autodl/deployment/${deploymentUuid}/delete`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showMessage('部署已删除', 'success');
+                    // 刷新部署列表
+                    await loadDeployments();
+                } else {
+                    showMessage('删除失败: ' + (data.error || '未知错误'), 'error');
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                showMessage('删除失败: ' + error.message, 'error');
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+        
+        // 确保函数在全局作用域
+        window.copyToClipboard = copyToClipboard;
+        window.stopDeployment = stopDeployment;
+        window.deleteDeployment = deleteDeployment;
+
+        // 加载历史脚本列表
+        async function loadHistoryScripts() {
+            const select = document.getElementById('history_script');
+            select.innerHTML = '<option value="">加载中...</option>';
+            
+            try {
+                const response = await fetch('/api/scripts', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    select.innerHTML = '<option value="">不使用历史脚本</option>';
+                    
+                    if (data.files && data.files.length > 0) {
+                        data.files.forEach(file => {
+                            const option = document.createElement('option');
+                            option.value = file.filename;
+                            option.textContent = `${file.filename} (${new Date(file.modified).toLocaleString('zh-CN')})`;
+                            option.dataset.filename = file.filename;
+                            select.appendChild(option);
+                        });
+                    }
+                    
+                    // 绑定选择事件
+                    select.onchange = async function() {
+                        await handleScriptSelection(this.value);
+                    };
+                } else {
+                    select.innerHTML = '<option value="">加载失败</option>';
+                    alert('加载历史脚本失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                select.innerHTML = '<option value="">加载失败</option>';
+                alert('加载历史脚本失败：' + error.message);
+            }
+        }
+
+        // 处理脚本选择（现在只是记录选择，不再修改启动命令）
+        async function handleScriptSelection(filename) {
+            // 历史脚本选择后，会在创建部署时使用
+            // 不需要在这里做任何处理，因为启动命令现在由run脚本控制
+            console.log('Selected history script:', filename);
+        }
+
+        // 加载部署列表
+        async function loadDeployments() {
+            const listDiv = document.getElementById('deployments-list');
+            listDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const response = await fetch('/api/autodl/deployments', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    if (data.deployments && data.deployments.length > 0) {
+                        // 过滤出正在运行的任务
+                        const runningDeployments = data.deployments.filter(deploy => {
+                            const status = deploy.status || deploy.state || 'unknown';
+                            return status === 'running' || status === 'Running';
+                        });
+                        
+                        if (runningDeployments.length === 0) {
+                            listDiv.innerHTML = '<div class="loading">暂无正在运行的部署</div>';
+                            return;
+                        }
+                        
+                        // 创建表格
+                        let html = '<table class="deployment-table">';
+                        html += '<thead><tr>';
+                        html += '<th>部署名称</th>';
+                        html += '<th>类型</th>';
+                        html += '<th>状态</th>';
+                        html += '<th>创建时间</th>';
+                        html += '<th>SSH命令</th>';
+                        html += '<th>Root密码</th>';
+                        html += '<th>6006端口服务</th>';
+                        html += '<th>6008端口服务</th>';
+                        html += '<th>操作</th>';
+                        html += '</tr></thead>';
+                        html += '<tbody>';
+                        
+                        // 并行获取所有部署的SSH信息
+                        const sshInfoPromises = runningDeployments.map(deploy => {
+                            const deploymentUuid = deploy.uuid || deploy.id || deploy.deployment_uuid || '';
+                            if (deploymentUuid) {
+                                return getSSHInfoForDeployment(deploymentUuid).then(sshData => ({
+                                    deploy,
+                                    sshData
+                                }));
+                            } else {
+                                return Promise.resolve({
+                                    deploy,
+                                    sshData: { status: 'error', message: '无部署UUID' }
+                                });
+                            }
+                        });
+                        
+                        const deploymentsWithSSH = await Promise.all(sshInfoPromises);
+                        
+                        deploymentsWithSSH.forEach(({ deploy, sshData }) => {
+                            // 获取部署UUID
+                            const deploymentUuid = deploy.uuid || deploy.id || deploy.deployment_uuid || '';
+                            
+                            const status = deploy.status || deploy.state || 'unknown';
+                            const statusClass = status === 'running' || status === 'Running' ? 'status-running' : 'status-stopped';
+                            const createdTime = deploy.created_at || deploy.created_time || '未知';
+                            const formattedTime = createdTime !== '未知' ? new Date(createdTime).toLocaleString('zh-CN') : '未知';
+                            
+                            const sshInfo = sshData.sshInfo || {};
+                            
+                            html += '<tr>';
+                            html += `<td style="font-weight: 600;">${deploy.name || '未命名部署'}</td>`;
+                            html += `<td>${deploy.type || deploy.deployment_type || '未知'}</td>`;
+                            html += `<td><span class="status-badge ${statusClass}">${status}</span></td>`;
+                            html += `<td>${formattedTime}</td>`;
+                            
+                            // SSH命令列
+                            const sshCommand = sshInfo.ssh_command || sshInfo.command || '';
+                            if (sshCommand) {
+                                // 转义HTML特殊字符，防止XSS
+                                const escapedCommand = sshCommand.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                                html += `<td style="word-break: break-all; padding: 8px;">`;
+                                html += `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">`;
+                                html += `<code style="background: #f8f9fa; padding: 3px 6px; border-radius: 3px; font-size: 0.7em; border: 1px solid #dee2e6; white-space: pre-wrap; flex: 1; min-width: 200px;">${escapedCommand}</code>`;
+                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshCommand.replace(/'/g, "\\'").replace(/\n/g, '\\n')}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
+                                html += `</div></td>`;
+                            } else if (sshData.status === 'pending') {
+                                html += `<td style="color: #856404; font-size: 0.7em; padding: 8px;">${(sshData.message || '排队中').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+                            } else if (sshData.status === 'error') {
+                                html += `<td style="color: #dc3545; font-size: 0.7em; padding: 8px;">${(sshData.message || '获取失败').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+                            } else {
+                                html += `<td style="color: #999; padding: 8px;">-</td>`;
+                            }
+                            
+                            // Root密码列
+                            if (sshInfo.root_password) {
+                                const escapedPassword = sshInfo.root_password.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                                html += `<td style="padding: 8px;">`;
+                                html += `<div style="display: flex; align-items: center; gap: 6px;">`;
+                                html += `<code style="background: #f8f9fa; padding: 3px 6px; border-radius: 3px; font-size: 0.7em; border: 1px solid #dee2e6; flex: 1; min-width: 100px;">${escapedPassword}</code>`;
+                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshInfo.root_password.replace(/'/g, "\\'")}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
+                                html += `</div></td>`;
+                            } else {
+                                html += `<td style="color: #999; padding: 8px;">-</td>`;
+                            }
+                            
+                            // 6006端口服务列
+                            if (sshInfo.service_6006_port_url) {
+                                const escapedUrl = sshInfo.service_6006_port_url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                                html += `<td style="word-break: break-all; padding: 8px;">`;
+                                html += `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">`;
+                                html += `<a href="${sshInfo.service_6006_port_url}" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.7em; flex: 1; min-width: 150px; word-break: break-all;">${escapedUrl}</a>`;
+                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshInfo.service_6006_port_url.replace(/'/g, "\\'")}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
+                                html += `</div></td>`;
+                            } else {
+                                html += `<td style="color: #999; padding: 8px;">-</td>`;
+                            }
+                            
+                            // 6008端口服务列
+                            if (sshInfo.service_6008_port_url) {
+                                const escapedUrl = sshInfo.service_6008_port_url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                                html += `<td style="word-break: break-all; padding: 8px;">`;
+                                html += `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">`;
+                                html += `<a href="${sshInfo.service_6008_port_url}" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.7em; flex: 1; min-width: 150px; word-break: break-all;">${escapedUrl}</a>`;
+                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshInfo.service_6008_port_url.replace(/'/g, "\\'")}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
+                                html += `</div></td>`;
+                            } else {
+                                html += `<td style="color: #999; padding: 8px;">-</td>`;
+                            }
+                            
+                            // 操作列（停止和删除）
+                            html += `<td style="padding: 8px;">`;
+                            html += `<div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">`;
+                            if (deploymentUuid) {
+                                html += `<button class="btn btn-warning" onclick="stopDeployment('${deploymentUuid.replace(/'/g, "\\'")}', this)" style="padding: 2px 8px; font-size: 0.7em; background: #ffc107; border: none; color: #000; white-space: nowrap; cursor: pointer;">停止</button>`;
+                                html += `<button class="btn btn-danger" onclick="deleteDeployment('${deploymentUuid.replace(/'/g, "\\'")}', this)" style="padding: 2px 8px; font-size: 0.7em; background: #dc3545; border: none; color: white; white-space: nowrap; cursor: pointer;">删除</button>`;
+                            } else {
+                                html += `<span style="color: #999; font-size: 0.7em;">无UUID</span>`;
+                            }
+                            html += `</div>`;
+                            html += `</td>`;
+                            
+                            html += '</tr>';
+                        });
+                        
+                        html += '</tbody></table>';
+                        listDiv.innerHTML = html;
+                    } else {
+                        listDiv.innerHTML = '<div class="loading">暂无部署</div>';
+                    }
+                } else {
+                    listDiv.innerHTML = '<div class="loading">加载失败：' + (data.error || '未知错误') + '</div>';
+                }
+            } catch (error) {
+                listDiv.innerHTML = '<div class="loading">加载失败：' + error.message + '</div>';
+            }
+        }
+
+        // 加载 GPU 库存
+        async function loadGPUStock() {
+            const contentDiv = document.getElementById('gpu-stock-content');
+            contentDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const response = await fetch('/api/autodl/gpu-stock', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    const gpuStock = data.gpu_stock || {};
+                    // 显示所有GPU型号
+                    const gpuTypes = ['RTX-5090', 'RTX-4090', 'RTX-4090D', 'RTX-4080', 'RTX-3090', 'RTX-3080', 'RTX-3070', 'V100', 'A100', 'H100', 'L20', 'L40'];
+                    
+                    let html = '<table class="gpu-stock-table"><thead><tr><th>数据中心</th>';
+                    gpuTypes.forEach(type => {
+                        html += `<th>${type}</th>`;
+                    });
+                    html += '</tr></thead><tbody>';
+                    
+                    // 按照指定的顺序显示数据中心
+                    const datacenterOrder = [
+                        "西北企业区(推荐)",
+                        "西北B区",
+                        "北京A区",
+                        "北京B区",
+                        "L20专区(原北京C区)",
+                        "V100专区(原华南A区)",
+                        "内蒙A区",
+                        "佛山区",
+                        "重庆A区",
+                        "3090专区",
+                        "内蒙B区"
+                    ];
+                    
+                    // 去掉括号内容的辅助函数
+                    function cleanDCName(name) {
+                        return name.replace(/\([^)]*\)/g, '').trim();
+                    }
+                    
+                    // 按照顺序遍历数据中心，确保所有数据中心都显示
+                    datacenterOrder.forEach(dcNameCn => {
+                        const displayName = cleanDCName(dcNameCn);
+                        html += `<tr><td><strong>${displayName}</strong></td>`;
+                        gpuTypes.forEach(type => {
+                            let stockText = 'N/A';
+                            let stockClass = 'stock-zero';
+                            
+                            // 检查是否有该数据中心的数据
+                            if (gpuStock[dcNameCn] && gpuStock[dcNameCn][type]) {
+                                const stock = gpuStock[dcNameCn][type];
+                                
+                                if (stock && !stock.error) {
+                                    // 获取空闲数量和总数量
+                                    const idle = stock.idle_gpu_num || stock.available || stock.count || 
+                                                stock.quantity || stock.num || stock.stock || 
+                                                (typeof stock === 'number' ? stock : 0);
+                                    const total = stock.total_gpu_num || stock.total || stock.total_count || idle;
+                                    
+                                    // 显示格式：空闲数量/总数量
+                                    if (total > 0) {
+                                        stockText = `${idle}/${total}`;
+                                    } else {
+                                        stockText = `${idle}`;
+                                    }
+                                    
+                                    // 根据空闲数量设置样式
+                                    if (idle > 10) {
+                                        stockClass = 'stock-available';
+                                    } else if (idle > 0) {
+                                        stockClass = 'stock-low';
+                                    } else {
+                                        stockClass = 'stock-zero';
+                                    }
+                                } else if (stock && stock.error) {
+                                    stockText = '错误';
+                                    stockClass = 'stock-zero';
+                                } else if (stock && stock.raw) {
+                                    stockText = stock.raw;
+                                    stockClass = 'stock-zero';
+                                }
+                            }
+                            
+                            html += `<td class="${stockClass}">${stockText}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                    contentDiv.innerHTML = '<div class="gpu-stock-container">' + html + '</div>';
+                } else {
+                    contentDiv.innerHTML = '<div class="loading">加载失败：' + (data.error || '未知错误') + '</div>';
+                }
+            } catch (error) {
+                contentDiv.innerHTML = '<div class="loading">加载失败：' + error.message + '</div>';
+            }
+        }
+
+        // 去掉数据中心名称中的括号内容
+        function cleanDatacenterName(name) {
+            return name.replace(/\([^)]*\)/g, '').trim();
+        }
+
+        // 初始化数据中心复选框
+        function initDatacenterCheckboxes() {
+            const container = document.getElementById('dc-checkboxes');
+            const datacenters = [
+                "西北企业区(推荐)",
+                "西北B区",
+                "北京A区",
+                "北京B区",
+                "L20专区(原北京C区)",
+                "V100专区(原华南A区)",
+                "内蒙A区",
+                "佛山区",
+                "重庆A区",
+                "3090专区",
+                "内蒙B区"
+            ];
+            
+            datacenters.forEach(dc => {
+                const label = document.createElement('label');
+                label.style.cssText = 'display: flex; align-items: center; gap: 5px; cursor: pointer;';
+                const isDefault = dc === '内蒙B区';
+                const displayName = cleanDatacenterName(dc);
+                label.innerHTML = `
+                    <input type="checkbox" value="${dc}" class="dc-checkbox" ${isDefault ? 'checked' : ''}>
+                    <span>${displayName}</span>
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        // 添加环境变量输入框
+        function addEnvVar(key = '', value = '', required = false, readonly = false) {
+            const container = document.getElementById('env-vars-container');
+            const envVarDiv = document.createElement('div');
+            envVarDiv.className = 'env-var-item';
+            envVarDiv.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-bottom: 10px;';
+            envVarDiv.dataset.envKey = key; // 保存key，用于后续更新
+            
+            if (readonly) {
+                // 只读显示项（JOB_NAME 和 GPU_NUM）
+                envVarDiv.innerHTML = `
+                    <input type="text" class="form-input env-var-key" value="${key}" style="flex: 1; background: #f8f9fa; cursor: not-allowed;" readonly>
+                    <input type="text" class="form-input env-var-value" value="${value}" style="flex: 1; background: #f8f9fa; cursor: not-allowed;" readonly>
+                    <span style="color: #6c757d; font-size: 0.85em; padding: 0 10px;">自动同步</span>
+                `;
+            } else {
+                // 可编辑项
+                const requiredMark = required ? ' <span style="color: #dc3545;">*</span>' : '';
+                envVarDiv.innerHTML = `
+                    <input type="text" class="form-input env-var-key" placeholder="变量名" value="${key}" style="flex: 1;" ${required ? 'required' : ''}>
+                    <input type="text" class="form-input env-var-value" placeholder="变量值" value="${value}" style="flex: 1;" ${required ? 'required' : ''}>
+                    <button type="button" class="btn btn-danger" onclick="removeEnvVar(this)" style="width: auto; padding: 10px 15px;" ${required ? 'disabled' : ''}>删除</button>
+                `;
+            }
+            container.appendChild(envVarDiv);
+        }
+        
+        // 更新只读环境变量的值
+        function updateReadonlyEnvVar(key, value) {
+            const container = document.getElementById('env-vars-container');
+            const items = container.querySelectorAll('.env-var-item');
+            items.forEach(item => {
+                if (item.dataset.envKey === key) {
+                    const valueInput = item.querySelector('.env-var-value');
+                    if (valueInput && valueInput.readOnly) {
+                        valueInput.value = value;
+                    }
+                }
+            });
+        }
+
+        // 删除环境变量输入框
+        function removeEnvVar(button) {
+            const item = button.parentElement;
+            const keyInput = item.querySelector('.env-var-key');
+            if (keyInput) {
+                const key = keyInput.value.trim();
+                // 不允许删除JOB_NAME和GPU_NUM
+                if (key === 'JOB_NAME' || key === 'GPU_NUM') {
+                    alert('JOB_NAME 和 GPU_NUM 是自动同步的环境变量，不能删除');
+                    return;
+                }
+            }
+            item.remove();
+        }
+
+        // 初始化环境变量（默认固定环境变量）
+        function initEnvVars() {
+            const container = document.getElementById('env-vars-container');
+            container.innerHTML = '';
+            
+            // 添加只读环境变量（自动同步）
+            const deploymentName = document.getElementById('deployment_name').value.trim() || '';
+            const gpuNum = document.getElementById('gpu_num').value.trim() || '1';
+            addEnvVar('JOB_NAME', deploymentName, false, true);
+            addEnvVar('GPU_NUM', gpuNum, false, true);
+            
+            // 默认添加固定的环境变量
+            addEnvVar('OUTPUT', '/root/autodl-fs', true);
+            addEnvVar('DATASET_PATH', '/root/autodl-tmp/dataset', false);
+            addEnvVar('MODEL_PATH', '/root/autodl-tmp/model/rtdetrv2/rtdetrv2_r50vd_m_7x_coco_ema.pth', false);
+            addEnvVar('NUM_EPOCHES', '100', false);
+        }
+
+        // Monaco Editor 实例
+        let monacoEditor = null;
+        let fullscreenMonacoEditor = null;
+        let isFullscreen = false;
+
+        // 初始化Monaco Editor
+        async function initMonacoEditor() {
+            if (typeof monaco === 'undefined') {
+                console.error('Monaco Editor未加载');
+                return;
+            }
+
+            const scriptType = document.getElementById('run_script_type').value;
+            const language = scriptType === 'python' ? 'python' : 'shell';
+            
+            // 创建主编辑器
+            monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: '',
+                language: language,
+                theme: 'vs-dark',
+                fontSize: 14,
+                minimap: { enabled: true },
+                automaticLayout: true,
+                wordWrap: 'on',
+                scrollBeyondLastLine: false,
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: true,
+                tabSize: 4,
+                insertSpaces: true
+            });
+
+            // 监听内容变化
+            monacoEditor.onDidChangeModelContent(() => {
+                // 内容变化时的处理
+            });
+
+            // 加载默认模板
+            await loadDefaultRunScript();
+        }
+
+        // 更新运行脚本编辑器
+        async function updateRunScriptEditor() {
+            if (!monacoEditor) return;
+            
+            const scriptType = document.getElementById('run_script_type').value;
+            const language = scriptType === 'python' ? 'python' : 'shell';
+            
+            // 更新语言
+            monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
+            
+            // 如果当前内容是空的，重新加载对应类型的模板
+            const currentValue = monacoEditor.getValue().trim();
+            if (!currentValue) {
+                await loadDefaultRunScript();
+            }
+        }
+
+        // 更新全屏编辑器
+        async function updateFullscreenEditor() {
+            if (!fullscreenMonacoEditor) return;
+            
+            const scriptType = document.getElementById('fullscreen_script_type').value;
+            const language = scriptType === 'python' ? 'python' : 'shell';
+            
+            monaco.editor.setModelLanguage(fullscreenMonacoEditor.getModel(), language);
+        }
+
+        // 切换全屏编辑
+        function toggleFullscreenEditor() {
+            const modal = document.getElementById('fullscreen-editor-modal');
+            
+            if (!isFullscreen) {
+                // 进入全屏
+                modal.style.display = 'flex';
+                isFullscreen = true;
+                
+                // 创建全屏编辑器
+                setTimeout(() => {
+                    if (!fullscreenMonacoEditor) {
+                        const scriptType = document.getElementById('run_script_type').value;
+                        const language = scriptType === 'python' ? 'python' : 'shell';
+                        const content = monacoEditor ? monacoEditor.getValue() : '';
+                        
+                        fullscreenMonacoEditor = monaco.editor.create(document.getElementById('fullscreen-monaco-editor'), {
+                            value: content,
+                            language: language,
+                            theme: 'vs-dark',
+                            fontSize: 16,
+                            minimap: { enabled: true },
+                            automaticLayout: true,
+                            wordWrap: 'on',
+                            scrollBeyondLastLine: false,
+                            suggestOnTriggerCharacters: true,
+                            quickSuggestions: true,
+                            tabSize: 4,
+                            insertSpaces: true
+                        });
+                        
+                        // 同步语言选择器
+                        document.getElementById('fullscreen_script_type').value = scriptType;
+                    } else {
+                        // 同步内容
+                        fullscreenMonacoEditor.setValue(monacoEditor.getValue());
+                    }
+                }, 100);
+            } else {
+                // 退出全屏，同步内容回主编辑器
+                if (fullscreenMonacoEditor && monacoEditor) {
+                    monacoEditor.setValue(fullscreenMonacoEditor.getValue());
+                }
+                modal.style.display = 'none';
+                isFullscreen = false;
+            }
+        }
+
+        // 加载默认运行脚本模板（从服务器获取）
+        async function loadDefaultRunScript() {
+            const scriptType = document.getElementById('run_script_type').value;
+            
+            try {
+                const response = await fetch('/api/autodl/run-script-templates', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                let template = '';
+                
+                if (response.ok && data.templates) {
+                    if (scriptType === 'python') {
+                        template = data.templates.run_py_template || '';
+                    } else {
+                        template = data.templates.run_sh_template || '';
+                    }
+                } else {
+                    // 如果获取失败，使用内置的默认值
+                    console.error('Failed to load templates:', data.error);
+                    template = loadDefaultRunScriptFallback();
+                }
+                
+                // 更新Monaco编辑器
+                if (monacoEditor) {
+                    monacoEditor.setValue(template);
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+                // 如果请求失败，使用内置的默认值
+                const template = loadDefaultRunScriptFallback();
+                if (monacoEditor) {
+                    monacoEditor.setValue(template);
+                }
+            }
+        }
+
+        // 后备默认脚本（如果无法从服务器加载）
+        function loadDefaultRunScriptFallback() {
+            const scriptType = document.getElementById('run_script_type').value;
+            
+            if (scriptType === 'python') {
+                return `#!/usr/bin/env python3
+import subprocess
+import os
+import sys
+from pathlib import Path
+
+# 切换到 /root 目录
+os.chdir('/root')
+
+# 获取 OUTPUT 环境变量
+output_dir = os.environ.get('OUTPUT', '/root/output')
+log_file = os.path.join(output_dir, 'build.log')
+
+# 确保日志目录存在
+Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+# 执行 build.sh，将输出重定向到日志文件
+print(f'Starting build.sh, logs will be saved to {log_file}...')
+try:
+    with open(log_file, 'w', encoding='utf-8') as log:
+        log.write(f'=== Starting build.sh ===\\n')
+        log.flush()
+        
+        result = subprocess.run(
+            ['bash', 'build.sh'],
+            cwd='/root',
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            check=True
+        )
+        
+        log.write(f'\\n=== build.sh completed successfully ===\\n')
+        log.flush()
+    
+    print(f'build.sh completed successfully, logs saved to {log_file}')
+    sys.exit(0)
+except subprocess.CalledProcessError as e:
+    error_msg = f'build.sh failed with error code {e.returncode}'
+    print(error_msg)
+    with open(log_file, 'a', encoding='utf-8') as log:
+        log.write(f'\\n=== ERROR: {error_msg} ===\\n')
+    sys.exit(1)
+except Exception as e:
+    error_msg = f'Error running build.sh: {e}'
+    print(error_msg)
+    with open(log_file, 'a', encoding='utf-8') as log:
+        log.write(f'\\n=== ERROR: {error_msg} ===\\n')
+    sys.exit(1)
+`;
+            } else {
+                return `#!/bin/bash
+cd /root
+
+nohup bash build.sh > $OUTPUT/build.log 2>&1
+`;
+            }
+        }
+
+        // 创建部署
+        async function createDeployment() {
+            const name = document.getElementById('deployment_name').value.trim();
+            const deploymentType = document.getElementById('deployment_type').value;
+            const imageSelect = document.getElementById('deployment_image');
+            const imageOption = imageSelect.options[imageSelect.selectedIndex];
+            const imageUuid = imageOption.value;
+            
+            // 获取选中的数据中心
+            const selectedDCs = Array.from(document.querySelectorAll('.dc-checkbox:checked')).map(cb => cb.value);
+            
+            // 获取 GPU 数量和类型
+            const gpuNum = parseInt(document.getElementById('gpu_num').value) || 1;
+            const selectedGPUs = Array.from(document.querySelectorAll('.gpu-type-checkbox:checked')).map(cb => cb.value);
+            
+            // 获取环境变量（包括自动同步的JOB_NAME和GPU_NUM）
+            const envVars = {};
+            let hasOutput = false;
+            
+            // 首先添加自动同步的环境变量
+            const deploymentName = document.getElementById('deployment_name').value.trim() || '';
+            const gpuNumStr = document.getElementById('gpu_num').value.trim() || '1';
+            envVars['JOB_NAME'] = deploymentName;
+            envVars['GPU_NUM'] = gpuNumStr;
+            
+            // 然后添加其他环境变量（排除JOB_NAME和GPU_NUM，避免重复）
+            document.querySelectorAll('.env-var-item').forEach(item => {
+                const keyInput = item.querySelector('.env-var-key');
+                const valueInput = item.querySelector('.env-var-value');
+                if (keyInput && valueInput) {
+                    const key = keyInput.value.trim();
+                    const value = valueInput.value.trim();
+                    // 跳过JOB_NAME和GPU_NUM（它们已经自动添加了）
+                    if (key && key !== 'JOB_NAME' && key !== 'GPU_NUM') {
+                        envVars[key] = value;
+                        if (key === 'OUTPUT') {
+                            hasOutput = true;
+                        }
+                    }
+                }
+            });
+            
+            // 调试信息
+            console.log('Collected environment variables:', envVars);
+            console.log('Has OUTPUT:', hasOutput);
+            
+            // 获取运行脚本
+            const runScriptType = document.getElementById('run_script_type').value;
+            const runScriptContent = monacoEditor ? monacoEditor.getValue().trim() : '';
+            
+            // 获取历史脚本（build.sh）
+            const historyScript = document.getElementById('history_script').value;
+
+            // 验证必填项
+            if (!name) {
+                alert('请输入部署名称');
+                return;
+            }
+
+            if (!imageUuid) {
+                alert('请选择镜像');
+                return;
+            }
+
+            if (!selectedGPUs || selectedGPUs.length === 0) {
+                alert('请至少选择一个 GPU 类型');
+                return;
+            }
+
+            if (!hasOutput) {
+                alert('必须配置 OUTPUT 环境变量');
+                return;
+            }
+
+            if (!runScriptContent) {
+                alert('请输入运行脚本代码');
+                return;
+            }
+
+            try {
+                // 第一步：保存环境变量脚本（env.sh）并获取下载URL
+                const envScriptResponse = await fetch('/api/autodl/save-env-script', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        env_vars: envVars
+                    })
+                });
+
+                const envScriptData = await envScriptResponse.json();
+                if (!envScriptResponse.ok) {
+                    alert('保存环境变量脚本失败：' + (envScriptData.error || '未知错误'));
+                    return;
+                }
+
+                const envScriptUrl = envScriptData.download_url;
+
+                // 第二步：保存run脚本并获取下载URL
+                const runScriptResponse = await fetch('/api/autodl/save-run-script', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        script_content: runScriptContent,
+                        script_type: runScriptType
+                    })
+                });
+
+                const runScriptData = await runScriptResponse.json();
+                if (!runScriptResponse.ok) {
+                    alert('保存运行脚本失败：' + (runScriptData.error || '未知错误'));
+                    return;
+                }
+
+                const runScriptUrl = runScriptData.download_url;
+                const runScriptFilename = runScriptData.filename; // run.sh 或 run.py
+
+                // 第三步：如果有历史脚本，获取其下载URL
+                let buildScriptUrl = null;
+                if (historyScript) {
+                    const buildScriptResponse = await fetch(`/api/scripts/${encodeURIComponent(historyScript)}/download`, {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    const buildScriptData = await buildScriptResponse.json();
+                    if (buildScriptResponse.ok && buildScriptData.download_url) {
+                        buildScriptUrl = buildScriptData.download_url;
+                    } else {
+                        alert('获取历史脚本下载链接失败：' + (buildScriptData.error || '未知错误'));
+                        return;
+                    }
+                }
+
+                // 第四步：构建启动命令
+                // 命令顺序：下载 build.sh -> 下载 env.sh -> source env.sh -> 下载 run.sh/run.py -> 执行 run.sh/run.py
+                let cmd = '';
+                if (buildScriptUrl) {
+                    cmd += `wget ${buildScriptUrl} -O build.sh && `;
+                }
+                cmd += `wget ${envScriptUrl} -O env.sh && `;
+                cmd += `source env.sh && `;
+                cmd += `wget ${runScriptUrl} -O ${runScriptFilename} && `;
+                if (runScriptType === 'python') {
+                    cmd += `python3 ${runScriptFilename}`;
+                } else {
+                    cmd += `bash ${runScriptFilename}`;
+                }
+
+                // 调试：打印环境变量和启动命令
+                console.log('=== Deployment Creation Debug ===');
+                console.log('Environment variables:', envVars);
+                console.log('Environment variables JSON:', JSON.stringify(envVars));
+                console.log('Has OUTPUT:', hasOutput);
+                console.log('OUTPUT value:', envVars.OUTPUT);
+                console.log('Final command:', cmd);
+                
+                // 第五步：创建部署（不再传递 env_vars，环境变量通过 env.sh 脚本传递）
+                const response = await fetch('/api/autodl/create-deployment', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        name: name,
+                        image_uuid: imageUuid,
+                        deployment_type: deploymentType,
+                        dc_list: selectedDCs,
+                        gpu_num: gpuNum,
+                        gpu_name_set: selectedGPUs,
+                        // env_vars 已移除，环境变量通过 env.sh 脚本传递
+                        cmd: cmd,
+                        // 传递运行脚本信息用于保存配置
+                        run_script_type: runScriptType,
+                        run_script_content: runScriptContent,
+                        history_script: historyScript || null,
+                        env_vars: envVars  // 仅用于保存配置，不传递给 API
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message || '部署创建成功！');
+                    // 切换到部署列表并刷新
+                    const deploymentsTab = document.querySelector('.nav-tab[data-tab="deployments"]');
+                    switchTab('deployments', deploymentsTab);
+                } else {
+                    alert('创建部署失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('创建部署失败：' + error.message);
+            }
+        }
+
+        // 加载任务提交配置列表
+        async function loadDeploymentConfigsList() {
+            const select = document.getElementById('load_config_select');
+            select.innerHTML = '<option value="">加载中...</option>';
+            
+            try {
+                const response = await fetch('/api/autodl/deployment-configs', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    select.innerHTML = '<option value="">加载历史配置...</option>';
+                    
+                    if (data.configs && data.configs.length > 0) {
+                        data.configs.forEach(config => {
+                            const option = document.createElement('option');
+                            option.value = config.full_filename;
+                            
+                            // 显示配置名称和创建时间
+                            const configName = config.config.name || '未命名部署';
+                            const createdDate = new Date(config.modified);
+                            const formattedDate = createdDate.toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            
+                            option.textContent = `${configName} (${formattedDate})`;
+                            option.dataset.config = JSON.stringify(config.config); // 保存配置数据
+                            select.appendChild(option);
+                        });
+                    }
+                } else {
+                    select.innerHTML = '<option value="">加载失败</option>';
+                    console.error('Failed to load configs:', data.error);
+                }
+            } catch (error) {
+                select.innerHTML = '<option value="">加载失败</option>';
+                console.error('Error loading configs:', error);
+            }
+        }
+
+        // 加载选中的配置到界面
+        async function loadSelectedConfig() {
+            const select = document.getElementById('load_config_select');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) {
+                alert('请先选择一个配置');
+                return;
+            }
+            
+            try {
+                // 从option中获取配置数据
+                const configData = JSON.parse(selectedOption.dataset.config);
+                
+                // 加载配置到界面
+                loadConfigToForm(configData);
+                
+                alert('配置加载成功！');
+            } catch (error) {
+                console.error('Error loading config:', error);
+                alert('加载配置失败：' + error.message);
+            }
+        }
+
+        // 将配置数据加载到表单
+        function loadConfigToForm(config) {
+            // 部署名称
+            if (config.name) {
+                document.getElementById('deployment_name').value = config.name;
+                // 更新只读环境变量JOB_NAME
+                updateReadonlyEnvVar('JOB_NAME', config.name);
+            }
+            
+            // 部署类型
+            if (config.deployment_type) {
+                document.getElementById('deployment_type').value = config.deployment_type;
+            }
+            
+            // 镜像UUID（需要先加载镜像列表才能选择）
+            if (config.image_uuid) {
+                const imageSelect = document.getElementById('deployment_image');
+                // 如果镜像列表已加载，尝试选择对应的镜像
+                if (imageSelect.options.length > 1) {
+                    for (let i = 0; i < imageSelect.options.length; i++) {
+                        if (imageSelect.options[i].value === config.image_uuid) {
+                            imageSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                } else {
+                    // 如果镜像列表未加载，先加载镜像列表
+                    loadImages().then(() => {
+                        setTimeout(() => {
+                            for (let i = 0; i < imageSelect.options.length; i++) {
+                                if (imageSelect.options[i].value === config.image_uuid) {
+                                    imageSelect.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }, 500);
+                    });
+                }
+            }
+            
+            // 数据中心列表
+            if (config.dc_list && Array.isArray(config.dc_list)) {
+                document.querySelectorAll('.dc-checkbox').forEach(cb => {
+                    cb.checked = config.dc_list.includes(cb.value);
+                });
+            }
+            
+            // GPU数量
+            if (config.gpu_num) {
+                document.getElementById('gpu_num').value = config.gpu_num;
+                // 更新只读环境变量GPU_NUM
+                updateReadonlyEnvVar('GPU_NUM', config.gpu_num.toString());
+            }
+            
+            // GPU类型
+            if (config.gpu_name_set && Array.isArray(config.gpu_name_set) && config.gpu_name_set.length > 0) {
+                document.querySelectorAll('.gpu-type-checkbox').forEach(cb => {
+                    // 配置中可能存储的是 "RTX 4090"（带空格）或 "RTX-4090"（带连字符）
+                    // 界面使用的是 "RTX-4090" 格式
+                    cb.checked = config.gpu_name_set.some(gpu => {
+                        // 转换为统一格式进行比较
+                        const normalizedConfig = gpu.replace(/ /g, '-');
+                        const normalizedValue = cb.value;
+                        return normalizedConfig === normalizedValue || gpu === cb.value;
+                    });
+                });
+            }
+            
+            // 历史脚本
+            if (config.history_script) {
+                // 需要先加载历史脚本列表
+                loadHistoryScripts().then(() => {
+                    setTimeout(() => {
+                        const historyScriptSelect = document.getElementById('history_script');
+                        for (let i = 0; i < historyScriptSelect.options.length; i++) {
+                            if (historyScriptSelect.options[i].value === config.history_script) {
+                                historyScriptSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }, 500);
+                });
+            }
+            
+            // 环境变量
+            const container = document.getElementById('env-vars-container');
+            container.innerHTML = '';
+            
+            // 首先添加只读环境变量（JOB_NAME和GPU_NUM），从当前表单值获取
+            const deploymentName = document.getElementById('deployment_name').value.trim() || '';
+            const gpuNum = document.getElementById('gpu_num').value.trim() || '1';
+            addEnvVar('JOB_NAME', deploymentName, false, true);
+            addEnvVar('GPU_NUM', gpuNum, false, true);
+            
+            if (config.env_vars && typeof config.env_vars === 'object') {
+                // 加载配置中的环境变量（排除JOB_NAME和GPU_NUM，因为它们会自动同步）
+                Object.entries(config.env_vars).forEach(([key, value]) => {
+                    if (key !== 'JOB_NAME' && key !== 'GPU_NUM') {
+                        const isOutput = key === 'OUTPUT';
+                        addEnvVar(key, value, isOutput);
+                    }
+                });
+            }
+            
+            // 确保 OUTPUT 环境变量存在（必填）
+            const hasOutput = Array.from(container.querySelectorAll('.env-var-item')).some(item => {
+                const keyInput = item.querySelector('.env-var-key');
+                return keyInput && keyInput.value.trim() === 'OUTPUT';
+            });
+            if (!hasOutput) {
+                addEnvVar('OUTPUT', '/root/autodl-fs', true);
+            }
+            
+            // 运行脚本类型和内容
+            if (config.run_script_type) {
+                document.getElementById('run_script_type').value = config.run_script_type;
+            }
+            
+            if (config.run_script_content) {
+                if (monacoEditor) {
+                    monacoEditor.setValue(config.run_script_content);
+                }
+            }
+            
+            // 更新脚本编辑器（如果切换了类型）
+            updateRunScriptEditor();
+        }
+
+        // 转义HTML函数
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // 保存部署配置（不创建部署）
+        window.saveDeploymentConfig = async function() {
+            const name = document.getElementById('deployment_name').value.trim();
+            if (!name) {
+                alert('请输入配置名称');
+                return;
+            }
+            openSaveGroupModal();
+        }
+
+        // 加载配置列表用于显示（列表形式）
+        async function loadDeploymentConfigsListForDisplay() {
+            const listContainer = document.getElementById('deployment-configs-list');
+            listContainer.innerHTML = '<div class="scripts-list-empty">正在加载...</div>';
+            
+            try {
+                const response = await fetch('/api/autodl/deployment-configs', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.configs && data.configs.length > 0) {
+                    listContainer.innerHTML = '';
+                    data.configs.forEach(config => {
+                        const item = document.createElement('div');
+                        item.className = 'script-file-item';
+                        
+                        const modifiedDate = new Date(config.modified);
+                        const formattedDate = modifiedDate.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        const configName = config.config.name || '未命名配置';
+                        item.innerHTML = `
+                            <div class="script-file-info">
+                                <div class="script-file-name">${escapeHtml(configName)}</div>
+                                <div class="script-file-meta">
+                                    <span>修改时间: ${formattedDate}</span>
+                                </div>
+                            </div>
+                            <div class="script-file-actions">
+                                <button class="btn-link btn-copy-link" onclick="loadDeploymentConfigFromList('${escapeHtml(config.full_filename)}')" title="加载配置">
+                                    <span>📥</span>
+                                    <span>加载</span>
+                                </button>
+                                <button class="btn-link btn-delete-link" onclick="deleteDeploymentConfig('${escapeHtml(config.full_filename)}', this)" title="删除配置">
+                                    <span>🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                            </div>
+                        `;
+                        item.dataset.config = JSON.stringify(config.config);
+                        listContainer.appendChild(item);
+                    });
+                } else {
+                    listContainer.innerHTML = '<div class="scripts-list-empty">暂无历史配置</div>';
+                }
+            } catch (error) {
+                listContainer.innerHTML = `<div class="scripts-list-empty">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 从列表加载配置
+        async function loadDeploymentConfigFromList(configFilename) {
+            try {
+                const response = await fetch(`/api/autodl/deployment-configs/${configFilename}`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    loadConfigToForm(data.config);
+                    alert('配置加载成功！');
+                } else {
+                    alert('加载失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('加载失败：' + error.message);
+            }
+        }
+
+        // 删除配置
+        async function deleteDeploymentConfig(configFilename, button) {
+            if (!confirm('确定要删除这个配置吗？此操作不可恢复。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/autodl/deployment-configs/${encodeURIComponent(configFilename)}`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    alert('配置删除成功');
+                    // 刷新配置列表和下拉框
+                    await loadDeploymentConfigsListForDisplay();
+                    await loadDeploymentConfigsList();
+                } else {
+                    alert('删除失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('删除失败：' + error.message);
+            }
+        }
+
+        // 退出登录
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // 页面加载时初始化
+        initPage().then(async () => {
+            // 初始化数据中心复选框
+            initDatacenterCheckboxes();
+            
+            // 初始化环境变量（确保OUTPUT存在）
+            initEnvVars();
+            
+            // 监听部署名称变化，自动更新JOB_NAME环境变量
+            document.getElementById('deployment_name').addEventListener('input', function() {
+                updateReadonlyEnvVar('JOB_NAME', this.value.trim() || '');
+            });
+            
+            // 监听GPU数量变化，自动更新GPU_NUM环境变量
+            document.getElementById('gpu_num').addEventListener('input', function() {
+                updateReadonlyEnvVar('GPU_NUM', this.value.trim() || '1');
+            });
+            
+            // 初始化Monaco Editor
+            if (typeof require !== 'undefined') {
+                require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+                require(['vs/editor/editor.main'], async () => {
+                    await initMonacoEditor();
+                    // 加载默认运行脚本（异步）
+                    await loadDefaultRunScript();
+                });
+            } else {
+                // 如果Monaco未加载，等待加载
+                await new Promise(resolve => {
+                    if (typeof monaco !== 'undefined') {
+                        resolve();
+                    } else {
+                        const checkMonaco = setInterval(() => {
+                            if (typeof monaco !== 'undefined') {
+                                clearInterval(checkMonaco);
+                                resolve();
+                            }
+                        }, 100);
+                    }
+                });
+                await initMonacoEditor();
+                await loadDefaultRunScript();
+            }
+            
+            // 等待初始化完成后再加载数据
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // 如果当前是提交标签页，自动加载历史脚本和镜像列表
+            if (currentTab === 'submit') {
+                // 自动加载历史脚本列表
+                loadHistoryScripts();
+                
+                // 检查Token并加载镜像列表
+                try {
+                    const response = await fetch('/api/user/autodl-token', {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    const data = await response.json();
+                    // 如果有Token，自动加载镜像列表
+                    if (data.has_token) {
+                        await loadImages();
+                    }
+                } catch (error) {
+                    console.error('Auto load images error:', error);
+                }
+            }
+        });
+
+        // ==================== 历史配置弹窗功能 ====================
+        let currentConfigGroup = '';
+        let currentMoveConfigPath = '';
+
+        function openConfigModal() {
+            console.log('openConfigModal called');
+            const modal = document.getElementById('configModal');
+            if (!modal) {
+                console.error('configModal element not found');
+                alert('配置弹窗元素未找到，请刷新页面重试');
+                return;
+            }
+            modal.classList.add('active');
+            loadConfigGroups();
+            loadConfigs();
+        }
+        
+        // 确保函数在全局作用域
+        window.openConfigModal = openConfigModal;
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        async function loadConfigGroups() {
+            try {
+                const response = await fetch('/api/autodl/deployment-configs/groups');
+                const data = await response.json();
+                
+                const groupFilter = document.getElementById('configGroupFilter');
+                const saveGroupSelect = document.getElementById('saveGroupSelect');
+                const moveGroupSelect = document.getElementById('moveGroupSelect');
+                
+                // 更新分组过滤器
+                groupFilter.innerHTML = '<option value="">全部分组</option>';
+                data.groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    groupFilter.appendChild(option);
+                });
+                
+                // 更新保存分组选择器
+                saveGroupSelect.innerHTML = '<option value="">默认（不分组）</option>';
+                data.groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    saveGroupSelect.appendChild(option);
+                });
+                
+                // 更新移动分组选择器
+                moveGroupSelect.innerHTML = '<option value="">默认（不分组）</option>';
+                data.groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    moveGroupSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('加载分组列表失败:', error);
+            }
+        }
+
+        async function loadConfigs() {
+            try {
+                // 获取所有配置（不分页，用于树形结构）
+                const response = await fetch('/api/autodl/deployment-configs?page=1&per_page=1000');
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                const configList = document.getElementById('configList');
+                
+                // 按分组组织配置
+                const groupedConfigs = {};
+                const ungroupedConfigs = [];
+                
+                data.configs.forEach(config => {
+                    const group = config.group || '';
+                    if (group) {
+                        if (!groupedConfigs[group]) {
+                            groupedConfigs[group] = [];
+                        }
+                        groupedConfigs[group].push(config);
+                    } else {
+                        ungroupedConfigs.push(config);
+                    }
+                });
+                
+                // 构建树形结构HTML
+                let html = '';
+                
+                // 显示分组配置
+                Object.keys(groupedConfigs).sort().forEach(group => {
+                    html += `
+                        <div class="config-group-item" style="margin-bottom: 15px;">
+                            <div class="config-group-header" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #e9ecef; border-radius: 6px; cursor: pointer; margin-bottom: 8px;" onclick="toggleConfigGroup('${group}')">
+                                <span class="group-toggle" style="font-size: 0.9em;">▶</span>
+                                <span style="font-weight: 600; color: #495057;">📁 ${group}</span>
+                                <span style="font-size: 0.85em; color: #6c757d; margin-left: auto;">${groupedConfigs[group].length} 个配置</span>
+                            </div>
+                            <div class="config-group-content" id="group-${group.replace(/[^a-zA-Z0-9]/g, '_')}" style="display: none; padding-left: 20px;">
+                                ${groupedConfigs[group].map(config => renderConfigItem(config)).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // 显示未分组配置
+                if (ungroupedConfigs.length > 0) {
+                    html += `
+                        <div class="config-group-item" style="margin-bottom: 15px;">
+                            <div class="config-group-header" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #e9ecef; border-radius: 6px; cursor: pointer; margin-bottom: 8px;" onclick="toggleConfigGroup('_ungrouped')">
+                                <span class="group-toggle" style="font-size: 0.9em;">▶</span>
+                                <span style="font-weight: 600; color: #495057;">📄 未分组</span>
+                                <span style="font-size: 0.85em; color: #6c757d; margin-left: auto;">${ungroupedConfigs.length} 个配置</span>
+                            </div>
+                            <div class="config-group-content" id="group__ungrouped" style="display: none; padding-left: 20px;">
+                                ${ungroupedConfigs.map(config => renderConfigItem(config)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (html === '') {
+                    configList.innerHTML = '<div class="scripts-list-empty">暂无配置</div>';
+                } else {
+                    configList.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('加载配置列表失败:', error);
+                document.getElementById('configList').innerHTML = '<div class="scripts-list-empty">加载失败: ' + error.message + '</div>';
+            }
+        }
+        
+        function renderConfigItem(config) {
+            const configData = config.config;
+            const modifiedDate = new Date(config.modified).toLocaleString('zh-CN');
+            
+            return `
+                <div class="config-item" style="margin-bottom: 8px;">
+                    <div class="config-info">
+                        <div class="config-name">${configData.name || '未命名配置'}</div>
+                        <div class="config-meta">
+                            <span>修改时间: ${modifiedDate}</span>
+                            <span>GPU: ${configData.gpu_num || 1} × ${(configData.gpu_name_set || []).join(', ') || '自动'}</span>
+                            <span>镜像: ${configData.image_uuid ? configData.image_uuid.substring(0, 20) + '...' : '未设置'}</span>
+                        </div>
+                    </div>
+                    <div class="config-actions">
+                        <button class="btn-load" onclick="loadConfigFromModal('${config.relative_path}')">加载</button>
+                        <button class="btn-move" onclick="openMoveGroupModal('${config.relative_path}')">移动到分组</button>
+                        <button class="btn-delete" onclick="deleteConfigFromModal('${config.relative_path}', this)">删除</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function toggleConfigGroup(group) {
+            console.log('toggleConfigGroup called with group:', group);
+            // 处理未分组的情况
+            let groupId;
+            if (group === '_ungrouped') {
+                groupId = 'group__ungrouped';  // 两个下划线
+            } else {
+                groupId = 'group-' + group.replace(/[^a-zA-Z0-9]/g, '_');
+            }
+            
+            console.log('Looking for element with id:', groupId);
+            const content = document.getElementById(groupId);
+            if (!content) {
+                console.error('Group content not found:', groupId);
+                // 尝试查找所有可能的ID
+                const allGroups = document.querySelectorAll('[id^="group-"]');
+                console.log('Available group IDs:', Array.from(allGroups).map(el => el.id));
+                return;
+            }
+            
+            const header = content.previousElementSibling;
+            if (!header) {
+                console.error('Group header not found');
+                return;
+            }
+            
+            const toggle = header.querySelector('.group-toggle');
+            if (!toggle) {
+                console.error('Group toggle not found');
+                return;
+            }
+            
+            const isHidden = content.style.display === 'none' || !content.style.display || getComputedStyle(content).display === 'none';
+            
+            if (isHidden) {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+        
+        // 确保函数在全局作用域
+        window.toggleConfigGroup = toggleConfigGroup;
+
+
+        async function loadConfigFromModal(relativePath) {
+            try {
+                const response = await fetch(`/api/autodl/deployment-configs/${encodeURIComponent(relativePath)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                loadConfigToForm(data.config);
+                closeConfigModal();
+                alert('配置已加载到页面');
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                alert('加载配置失败: ' + error.message);
+            }
+        }
+
+        async function deleteConfigFromModal(relativePath, button) {
+            if (!confirm('确定要删除这个配置吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/autodl/deployment-configs/${encodeURIComponent(relativePath)}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                button.closest('.config-item').remove();
+                loadConfigs(); // 重新加载以更新分页
+            } catch (error) {
+                console.error('删除配置失败:', error);
+                alert('删除配置失败: ' + error.message);
+            }
+        }
+
+        function openMoveGroupModal(relativePath) {
+            currentMoveConfigPath = relativePath;
+            loadConfigGroups();
+            document.getElementById('moveGroupModal').classList.add('active');
+        }
+
+        function closeMoveGroupModal() {
+            document.getElementById('moveGroupModal').classList.remove('active');
+            currentMoveConfigPath = '';
+        }
+
+        async function confirmMoveConfig() {
+            const groupSelect = document.getElementById('moveGroupSelect');
+            const newGroupName = document.getElementById('moveNewGroupName').value.trim();
+            
+            const targetGroup = newGroupName || groupSelect.value || null;
+            
+            try {
+                const response = await fetch('/api/autodl/deployment-configs/move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        relative_path: currentMoveConfigPath,
+                        group: targetGroup
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                closeMoveGroupModal();
+                loadConfigs();
+                alert('配置已移动到分组');
+            } catch (error) {
+                console.error('移动配置失败:', error);
+                alert('移动配置失败: ' + error.message);
+            }
+        }
+
+        // ==================== 保存设置分组选择 ====================
+        function openSaveGroupModal() {
+            loadConfigGroups();
+            document.getElementById('saveGroupModal').classList.add('active');
+        }
+
+        function closeSaveGroupModal() {
+            document.getElementById('saveGroupModal').classList.remove('active');
+            document.getElementById('newGroupName').value = '';
+            currentSaveRecordFilename = null; // 重置
+        }
+
+        async function confirmSaveConfig() {
+            const groupSelect = document.getElementById('saveGroupSelect');
+            const newGroupName = document.getElementById('newGroupName').value.trim();
+            
+            const targetGroup = newGroupName || groupSelect.value || null;
+            
+            // 如果是保存提交记录到历史配置
+            if (currentSaveRecordFilename) {
+                try {
+                    const response = await fetch(`/api/autodl/deployment-records/${encodeURIComponent(currentSaveRecordFilename)}/save-to-config`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            group: targetGroup
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    closeSaveGroupModal();
+                    currentSaveRecordFilename = null;
+                    alert('记录已保存到历史配置' + (targetGroup ? `（分组: ${targetGroup}）` : ''));
+                    loadConfigs(); // 刷新历史配置列表
+                } catch (error) {
+                    console.error('保存记录到历史配置失败:', error);
+                    alert('保存失败: ' + error.message);
+                }
+            } else {
+                // 原来的保存设置逻辑
+                await saveDeploymentConfigWithGroup(targetGroup);
+                closeSaveGroupModal();
+            }
+        }
+
+        async function saveDeploymentConfigWithGroup(group) {
+            try {
+                // 收集所有配置信息（与原来的saveDeploymentConfig相同）
+                const deploymentName = document.getElementById('deployment_name').value.trim() || '未命名配置';
+                const deploymentType = document.getElementById('deployment_type').value;
+                const imageUuid = document.getElementById('deployment_image').value;
+                const gpuNum = parseInt(document.getElementById('gpu_num').value) || 1;
+                const selectedGPUs = Array.from(document.querySelectorAll('.gpu-type-checkbox:checked')).map(cb => cb.value);
+                const selectedDCs = Array.from(document.querySelectorAll('.dc-checkbox:checked')).map(cb => cb.value);
+                const runScriptType = document.getElementById('run_script_type').value;
+                const runScriptContent = monacoEditor ? monacoEditor.getValue() : '';
+                const historyScript = document.getElementById('history_script').value;
+                
+                // 获取环境变量
+                const envVars = {};
+                const deploymentNameVal = document.getElementById('deployment_name').value.trim() || '';
+                const gpuNumStr = document.getElementById('gpu_num').value.trim() || '1';
+                envVars['JOB_NAME'] = deploymentNameVal;
+                envVars['GPU_NUM'] = gpuNumStr;
+                
+                document.querySelectorAll('.env-var-row').forEach(row => {
+                    const keyInput = row.querySelector('.env-var-key');
+                    const valueInput = row.querySelector('.env-var-value');
+                    if (keyInput && valueInput) {
+                        const key = keyInput.value.trim();
+                        const value = valueInput.value.trim();
+                        if (key) {
+                            envVars[key] = value;
+                        }
+                    }
+                });
+                
+                const configData = {
+                    name: deploymentName,
+                    deployment_type: deploymentType,
+                    image_uuid: imageUuid,
+                    dc_list: selectedDCs,
+                    gpu_num: gpuNum,
+                    gpu_name_set: selectedGPUs,
+                    env_vars: envVars,
+                    replica_num: 1,
+                    parallelism_num: null,
+                    cmd: '',
+                    run_script_type: runScriptType,
+                    run_script_content: runScriptContent,
+                    history_script: historyScript || null,
+                    group: group
+                };
+                
+                const response = await fetch('/api/autodl/deployment-configs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                alert('配置保存成功' + (group ? `（分组: ${group}）` : ''));
+                if (document.getElementById('configModal').classList.contains('active')) {
+                    loadConfigs();
+                }
+            } catch (error) {
+                console.error('保存配置失败:', error);
+                alert('保存配置失败: ' + error.message);
+            }
+        }
+
+        // ==================== 提交记录功能 ====================
+        let currentRecordsPage = 1;
+        const recordsPerPage = 10;
+        let currentSaveRecordFilename = null;
+
+        async function loadRecords() {
+            try {
+                const response = await fetch(`/api/autodl/deployment-records?page=${currentRecordsPage}&per_page=${recordsPerPage}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                const recordsList = document.getElementById('records-list');
+                const pagination = data.pagination;
+                
+                if (data.records.length === 0) {
+                    recordsList.innerHTML = '<div class="scripts-list-empty">暂无提交记录</div>';
+                } else {
+                    recordsList.innerHTML = data.records.map(record => {
+                        const recordData = record.record;
+                        const modifiedDate = new Date(record.modified).toLocaleString('zh-CN');
+                        const deploymentUuid = recordData.deployment_uuid || '未知';
+                        
+                        return `
+                            <div class="config-item" style="margin-bottom: 10px;">
+                                <div class="config-info">
+                                    <div class="config-name">${recordData.name || '未命名部署'} <span style="color: #28a745; font-size: 0.85em;">[记录]</span></div>
+                                    <div class="config-meta">
+                                        <span>提交时间: ${modifiedDate}</span>
+                                        <span>部署UUID: ${deploymentUuid.substring(0, 20)}${deploymentUuid.length > 20 ? '...' : ''}</span>
+                                        <span>GPU: ${recordData.gpu_num || 1} × ${(recordData.gpu_name_set || []).join(', ') || '自动'}</span>
+                                        <span>镜像: ${recordData.image_uuid ? recordData.image_uuid.substring(0, 20) + '...' : '未设置'}</span>
+                                    </div>
+                                </div>
+                                <div class="config-actions">
+                                    <button class="btn-load" onclick="loadRecordToForm('${record.full_filename}')">加载</button>
+                                    <button class="btn-move" onclick="saveRecordToConfig('${record.full_filename}')" style="background: #17a2b8;">保存到历史配置</button>
+                                    <button class="btn-delete" onclick="deleteRecord('${record.full_filename}', this)">删除</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                // 更新分页信息
+                updateRecordsPagination(pagination);
+            } catch (error) {
+                console.error('加载提交记录失败:', error);
+                document.getElementById('records-list').innerHTML = '<div class="scripts-list-empty">加载失败: ' + error.message + '</div>';
+            }
+        }
+
+        function updateRecordsPagination(pagination) {
+            document.getElementById('recordsPaginationInfo').textContent = `第 ${pagination.page} 页，共 ${pagination.pages} 页，共 ${pagination.total} 条`;
+            document.getElementById('recordsPageInfo').textContent = `${pagination.page} / ${pagination.pages}`;
+            document.getElementById('recordsPrevPageBtn').disabled = pagination.page <= 1;
+            document.getElementById('recordsNextPageBtn').disabled = pagination.page >= pagination.pages;
+        }
+
+        function changeRecordsPage(delta) {
+            const newPage = currentRecordsPage + delta;
+            if (newPage >= 1) {
+                currentRecordsPage = newPage;
+                loadRecords();
+            }
+        }
+
+        async function loadRecordToForm(recordFilename) {
+            try {
+                const response = await fetch(`/api/autodl/deployment-records/${encodeURIComponent(recordFilename)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                loadConfigToForm(data.record);
+                // 切换到实验提交标签页
+                const submitTab = document.querySelector('.nav-tab[data-tab="submit"]');
+                if (submitTab) {
+                    switchTab('submit', submitTab);
+                }
+                alert('记录已加载到页面');
+            } catch (error) {
+                console.error('加载记录失败:', error);
+                alert('加载记录失败: ' + error.message);
+            }
+        }
+
+        async function saveRecordToConfig(recordFilename) {
+            // 打开保存到历史配置的弹窗
+            currentSaveRecordFilename = recordFilename;
+            loadConfigGroups();
+            document.getElementById('saveGroupModal').classList.add('active');
+        }
+
+        async function deleteRecord(recordFilename, button) {
+            if (!confirm('确定要删除这个提交记录吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/autodl/deployment-records/${encodeURIComponent(recordFilename)}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                button.closest('.config-item').remove();
+                loadRecords(); // 重新加载以更新分页
+            } catch (error) {
+                console.error('删除记录失败:', error);
+                alert('删除记录失败: ' + error.message);
+            }
+        }
+
+        // 修改confirmSaveConfig函数，支持保存提交记录到历史配置
+        const originalConfirmSaveConfig = confirmSaveConfig;
+        window.confirmSaveConfig = async function() {
+            const groupSelect = document.getElementById('saveGroupSelect');
+            const newGroupName = document.getElementById('newGroupName').value.trim();
+            
+            const targetGroup = newGroupName || groupSelect.value || null;
+            
+            // 如果是保存提交记录到历史配置
+            if (currentSaveRecordFilename) {
+                try {
+                    const response = await fetch(`/api/autodl/deployment-records/${encodeURIComponent(currentSaveRecordFilename)}/save-to-config`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            group: targetGroup
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    closeSaveGroupModal();
+                    currentSaveRecordFilename = null;
+                    alert('记录已保存到历史配置' + (targetGroup ? `（分组: ${targetGroup}）` : ''));
+                    loadConfigs(); // 刷新历史配置列表
+                } catch (error) {
+                    console.error('保存记录到历史配置失败:', error);
+                    alert('保存失败: ' + error.message);
+                }
+            } else {
+                // 原来的保存设置逻辑
+                await originalConfirmSaveConfig();
+            }
+        };
+
+    </script>
+</body>
+</html>
