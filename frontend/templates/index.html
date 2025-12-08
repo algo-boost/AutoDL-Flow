@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>准备设置 - AutoDL 弹性部署</title>
+    <title>准备设置 - AutoDL Flow</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <!-- Monaco Editor -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
@@ -1612,9 +1612,35 @@
         }
 
         // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 从API加载配置（如果模板变量为空）
+            if (Object.keys(repos).length === 0) {
+                try {
+                    const response = await fetch('/api/user/repos');
+                    const data = await response.json();
+                    if (response.ok && data.repos) {
+                        Object.assign(repos, data.repos);
+                    }
+                } catch (error) {
+                    console.error('Failed to load repos:', error);
+                }
+            }
+            
+            if (Object.keys(models).length === 0) {
+                try {
+                    const response = await fetch('/api/user/models');
+                    const data = await response.json();
+                    if (response.ok && data.models) {
+                        Object.assign(models, data.models);
+                    }
+                } catch (error) {
+                    console.error('Failed to load models:', error);
+                }
+            }
+            
             initRepos();
             initModels();
+            initCategoryGroups();
         });
 
         // 初始化仓库列表

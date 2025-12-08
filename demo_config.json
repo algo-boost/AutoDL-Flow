@@ -1,12 +1,43 @@
 {
     "repos": {
+        "hq_det": {
+            "url": "git@github.com:magic-visual-plus/hq_det.git",
+            "install_cmds": [
+                "pip install --upgrade pip",
+                "pip install openmim",
+                "mim install --trusted-host download.openmmlab.com mmcv==2.1.0 mmdet==3.3.0 mmengine==0.10.7",
+                "pip install peft==0.10.0 transformers==4.43.3 accelerate==1.9.0 ultralytics",
+                "pip install -e .",
+                "pip install --upgrade --no-cache-dir numpy==1.26.3 scipy==1.15.3",
+                "pip install \"opencv-python<4.10\" --upgrade"
+            ]
+        },
+        "hq_job": {
+            "url": "git@github.com:magic-visual-plus/hq_job.git",
+            "install_cmds": [
+                "pip install -e ."
+            ]
+        },
+        "Image-Comparison-Tool": {
+            "url": "git@github.com:Rookie-AI-CV/Image-Comparison-Tool.git",
+            "install_cmds": [
+                "pip install flask"
+            ]
+        },
+        "cv_scripts": {
+            "url": "git@github.com:Rookie-AI-CV/cv-scripts.git",
+            "install_cmds": [
+            ]
+        }
     },
     "data_download": {
         "script_remote_path": "/apps/autodl/dataset_down/",
         "script_local_path": "/root/dataset_down/"
     },
     "category_groups": [
-        "YOUR_CATEGORY_GROUPS"
+        "座椅",
+        "座椅熨烫",
+        "意得齿轮"
     ],
     "models": {
         "dino": {

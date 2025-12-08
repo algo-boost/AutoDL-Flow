@@ -1,4 +1,32 @@
-# 作业脚本生成器 Web 工具
+# AutoDL Flow
+
+## 项目简介
+
+AutoDL Flow 是一个基于 Flask 的 Web 工具，用于自动生成作业执行脚本。项目采用模块化设计，代码结构清晰，易于维护和扩展。
+
+## 项目结构
+
+项目已重构为标准化的目录结构，详情请参考 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)。
+
+### 主要目录
+
+- `backend/` - 后端代码
+  - `auth/` - 认证模块
+  - `services/` - 业务逻辑服务层
+  - `utils/` - 工具函数模块
+  - `routes/` - 路由模块
+- `frontend/` - 前端代码
+  - `templates/` - HTML 模板
+  - `static/` - 静态资源（CSS、JS、图片等）
+- `data/` - 数据文件目录（所有用户数据存储在这里）
+  - `scripts/` - 历史脚本
+  - `configs/` - 用户配置
+  - `temp_scripts/` - 临时脚本
+  - `deployment_configs/` - 部署配置
+  - `deployment_records/` - 部署记录
+- `scripts/` - 工具脚本
+  - `migrate_data.py` - 数据迁移脚本
+  - `package_project.sh` - 项目打包脚本
 
 ## 功能说明
 
@@ -27,7 +55,7 @@
 ### 安装依赖
 
 ```bash
-pip install flask
+pip install -r requirements.txt
 ```
 
 ### 运行工具
@@ -36,7 +64,7 @@ pip install flask
 python app.py
 ```
 
-然后在浏览器中访问：`http://localhost:5000`
+然后在浏览器中访问：`http://localhost:6008`（默认端口 6008）
 
 ### 使用步骤
 
@@ -127,25 +155,57 @@ python app.py
 
 ### 数据存储结构
 
-```
-/root/autodl_scripts_storage/     # 脚本存储根目录
-├── script1.sh                     # admin 的脚本（旧数据，向后兼容）
-├── admin/                         # admin 的脚本目录
-│   └── script2.sh
-├── user1/                         # user1 的脚本目录
-│   └── script3.sh
-└── user2/                         # user2 的脚本目录
-    └── script4.sh
+所有数据存储在项目目录内的 `data/` 目录中：
 
-/root/autodl_configs_storage/      # 配置存储根目录
-├── config1.json                   # admin 的配置（旧数据，向后兼容）
-├── admin/                         # admin 的配置目录
-│   └── config2.json
-├── user1/                         # user1 的配置目录
-│   └── config3.json
-└── user2/                         # user2 的配置目录
-    └── config4.json
 ```
+data/
+├── scripts/                       # 脚本存储目录
+│   ├── script1.sh                # admin 的脚本（根目录）
+│   ├── admin/                    # admin 的脚本目录
+│   │   └── script2.sh
+│   ├── user1/                    # user1 的脚本目录
+│   │   └── script3.sh
+│   └── user2/                    # user2 的脚本目录
+│       └── script4.sh
+│
+├── configs/                       # 配置存储目录
+│   ├── config1.json              # admin 的配置（根目录）
+│   ├── admin/                    # admin 的配置目录
+│   │   └── config2.json
+│   ├── user1/                    # user1 的配置目录
+│   │   └── config3.json
+│   └── user2/                    # user2 的配置目录
+│       └── config4.json
+│
+├── temp_scripts/                  # 临时脚本目录
+├── deployment_configs/            # 部署配置目录
+└── deployment_records/             # 部署记录目录
+```
+
+**注意**：所有数据都在项目目录内，方便打包和迁移到其他服务器。
+
+## 项目可移植性
+
+项目已完全可移植，所有配置和数据都在项目目录内：
+
+- ✅ 所有数据存储在 `data/` 目录
+- ✅ 所有配置文件在项目根目录
+- ✅ 使用相对路径，不依赖系统目录
+
+### 打包项目
+
+```bash
+./scripts/package_project.sh
+```
+
+### 迁移到新服务器
+
+1. 传输打包文件到新服务器
+2. 解压项目
+3. 安装依赖：`pip install -r requirements.txt`
+4. 启动应用：`python app.py`
+
+详细说明请参考 [DATA_MIGRATION_GUIDE.md](DATA_MIGRATION_GUIDE.md) 和 [PORTABILITY_SUMMARY.md](PORTABILITY_SUMMARY.md)。
 
 ## 注意事项
 
@@ -155,6 +215,7 @@ python app.py
 - 随机划分使用固定随机种子（42）确保可复现
 - 如果 `/root/autodl-fs` 目录中有缓存文件，脚本会优先使用缓存，避免重复下载
 - **多账户配置**：在配置文件中使用 `accounts` 字段配置多个账户，`login` 字段用于向后兼容
+- **数据存储**：所有数据存储在项目目录内的 `data/` 目录，方便打包和迁移
 
 ## 模型配置说明
 

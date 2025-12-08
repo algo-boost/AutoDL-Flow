@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>任务提交 - AutoDL 弹性部署</title>
+    <title>任务提交 - AutoDL Flow</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <!-- Monaco Editor -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
@@ -1514,6 +1514,15 @@
                     body: JSON.stringify({})
                 });
 
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    alert('加载镜像列表失败：服务器返回了非JSON格式的响应');
+                    return;
+                }
+
                 const data = await response.json();
                 if (response.ok) {
                     const select = document.getElementById('deployment_image');
@@ -1758,6 +1767,7 @@
         // 加载历史脚本列表
         async function loadHistoryScripts() {
             const select = document.getElementById('history_script');
+            if (!select) return;
             select.innerHTML = '<option value="">加载中...</option>';
             
             try {
@@ -1766,15 +1776,35 @@
                     credentials: 'same-origin'
                 });
                 
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    select.innerHTML = '<option value="">加载失败：服务器返回了非JSON格式的响应</option>';
+                    return;
+                }
+                
                 const data = await response.json();
                 if (response.ok) {
                     select.innerHTML = '<option value="">不使用历史脚本</option>';
                     
-                    if (data.files && data.files.length > 0) {
-                        data.files.forEach(file => {
+                    // 兼容两种返回格式：data.files 或 data.scripts
+                    const scripts = data.files || data.scripts || [];
+                    if (scripts.length > 0) {
+                        scripts.forEach(file => {
                             const option = document.createElement('option');
                             option.value = file.filename;
-                            option.textContent = `${file.filename} (${new Date(file.modified).toLocaleString('zh-CN')})`;
+                            // 处理时间格式：可能是 ISO 字符串或时间戳
+                            let modifiedTime = '未知时间';
+                            if (file.modified) {
+                                if (typeof file.modified === 'string') {
+                                    modifiedTime = new Date(file.modified).toLocaleString('zh-CN');
+                                } else {
+                                    modifiedTime = new Date(file.modified * 1000).toLocaleString('zh-CN');
+                                }
+                            }
+                            option.textContent = `${file.filename} (${modifiedTime})`;
                             option.dataset.filename = file.filename;
                             select.appendChild(option);
                         });
@@ -1804,6 +1834,7 @@
         // 加载部署列表
         async function loadDeployments() {
             const listDiv = document.getElementById('deployments-list');
+            if (!listDiv) return;
             listDiv.innerHTML = '<div class="loading">加载中...</div>';
 
             try {
@@ -1813,6 +1844,15 @@
                     credentials: 'same-origin',
                     body: JSON.stringify({})
                 });
+
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    listDiv.innerHTML = '<div class="loading">加载失败：服务器返回了非JSON格式的响应</div>';
+                    return;
+                }
 
                 const data = await response.json();
                 if (response.ok) {
@@ -1963,6 +2003,7 @@
         // 加载 GPU 库存
         async function loadGPUStock() {
             const contentDiv = document.getElementById('gpu-stock-content');
+            if (!contentDiv) return;
             contentDiv.innerHTML = '<div class="loading">加载中...</div>';
 
             try {
@@ -1970,6 +2011,15 @@
                     method: 'GET',
                     credentials: 'same-origin'
                 });
+
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    contentDiv.innerHTML = '<div class="loading">加载失败：服务器返回了非JSON格式的响应</div>';
+                    return;
+                }
 
                 const data = await response.json();
                 if (response.ok) {
@@ -2583,6 +2633,7 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
         // 加载任务提交配置列表
         async function loadDeploymentConfigsList() {
             const select = document.getElementById('load_config_select');
+            if (!select) return;
             select.innerHTML = '<option value="">加载中...</option>';
             
             try {
@@ -2590,6 +2641,15 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                     method: 'GET',
                     credentials: 'same-origin'
                 });
+                
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    select.innerHTML = '<option value="">加载失败：服务器返回了非JSON格式的响应</option>';
+                    return;
+                }
                 
                 const data = await response.json();
                 if (response.ok) {
@@ -2970,6 +3030,9 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                 // 自动加载历史脚本列表
                 loadHistoryScripts();
                 
+                // 自动加载历史配置列表
+                loadDeploymentConfigsList();
+                
                 // 检查Token并加载镜像列表
                 try {
                     const response = await fetch('/api/user/autodl-token', {
@@ -2977,13 +3040,19 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                         credentials: 'same-origin'
                     });
                     const data = await response.json();
-                    // 如果有Token，自动加载镜像列表
+                    // 如果有Token，自动加载镜像列表和部署列表
                     if (data.has_token) {
                         await loadImages();
+                        await loadDeployments();
                     }
                 } catch (error) {
                     console.error('Auto load images error:', error);
                 }
+            }
+            
+            // 如果当前是历史配置标签页，自动加载配置列表
+            if (currentTab === 'configs') {
+                loadConfigs();
             }
         });
 
@@ -3055,7 +3124,20 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
             try {
                 // 获取所有配置（不分页，用于树形结构）
                 const response = await fetch('/api/autodl/deployment-configs?page=1&per_page=1000');
+                
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('服务器返回了非JSON格式的响应，可能是路由错误');
+                }
+                
                 const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
                 
                 if (data.error) {
                     throw new Error(data.error);
@@ -3389,7 +3471,19 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                     body: JSON.stringify(configData)
                 });
                 
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('服务器返回了非JSON格式的响应');
+                }
+                
                 const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
                 
                 if (data.error) {
                     throw new Error(data.error);
@@ -3413,7 +3507,24 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
         async function loadRecords() {
             try {
                 const response = await fetch(`/api/autodl/deployment-records?page=${currentRecordsPage}&per_page=${recordsPerPage}`);
+                
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    const recordsList = document.getElementById('records-list');
+                    if (recordsList) {
+                        recordsList.innerHTML = '<div class="scripts-list-empty">加载失败：服务器返回了非JSON格式的响应</div>';
+                    }
+                    return;
+                }
+                
                 const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
                 
                 if (data.error) {
                     throw new Error(data.error);

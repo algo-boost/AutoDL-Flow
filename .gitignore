@@ -16,35 +16,14 @@ parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
-# 虚拟环境
+# Virtual Environment
 venv/
 env/
 ENV/
-env.bak/
-venv.bak/
-.venv/
-
-# Flask
-instance/
-.webassets-cache
-.flaskenv
-
-# 敏感文件和配置
-.encryption_key
-.config
-*.key
-*.pem
-*.p12
-secrets.json
-config.json
-!demo_config.json
 
 # IDE
 .vscode/
@@ -52,29 +31,66 @@ config.json
 *.swp
 *.swo
 *~
-.DS_Store
+
+# Flask
+instance/
+.webassets-cache
+
+# 项目根目录：忽略所有文件，但保留 README.md 和 PROJECT_STRUCTURE.md
+# 注意：规则顺序很重要，排除规则必须在忽略规则之后
+# 先忽略根目录下的所有文件和目录
+/*
+# 然后排除需要保留的文件和目录
+!.gitignore
+!README.md
+!PROJECT_STRUCTURE.md
+!backend/
+!frontend/
+!scripts/
+!data/
+
+# 明确忽略根目录下的所有 .md 文件（除了 README.md 和 PROJECT_STRUCTURE.md）
+/*.md
+!README.md
+!PROJECT_STRUCTURE.md
+
+# 明确忽略根目录下的其他文件
+/app.py
+/old_app.py
+/requirements.txt
+/repos_config.json
+/run_script_templates.json
+/demo_config.json
+/.accounts.json
+/.category_groups.json
+/.encryption_key
+
+# 配置文件（包含敏感信息）
+.accounts.json
+.encryption_key
+.env
+.env.local
+
+# 数据目录（保留目录结构，但忽略用户数据）
+data/scripts/
+data/configs/
+data/temp_scripts/
+data/deployment_configs/
+data/deployment_records/
+# 但保留 data/ 目录本身
+!data/.gitkeep
+
+# 备份目录
+archive/
 
 # 日志文件
 *.log
-logs/
-
-# 操作系统
-Thumbs.db
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Desktop.ini
 
 # 临时文件
 *.tmp
-*.temp
-.cache/
 *.bak
 
-# 用户生成的文件
-auto_job.sh
-*.sh.bak
+# 操作系统
+.DS_Store
+Thumbs.db
 
