@@ -3176,9 +3176,24 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                     })
                 });
                 
-                const runScriptData = await runScriptResponse.json();
+                // 安全解析 JSON 响应
+                const runScriptContentType = runScriptResponse.headers.get('content-type') || '';
+                let runScriptData = null;
+                if (runScriptContentType.includes('application/json')) {
+                    try {
+                        runScriptData = await runScriptResponse.json();
+                    } catch (e) {
+                        alert('生成预览失败：服务器返回了无效的 JSON 响应');
+                        return;
+                    }
+                } else {
+                    const text = await runScriptResponse.text();
+                    alert(`生成预览失败：服务器返回了非 JSON 响应 (${runScriptResponse.status}): ${text.substring(0, 100)}`);
+                    return;
+                }
+                
                 if (!runScriptResponse.ok) {
-                    alert('生成预览失败：' + (runScriptData.error || '未知错误'));
+                    alert('生成预览失败：' + (runScriptData?.error || '未知错误'));
                     return;
                 }
                 
@@ -3192,8 +3207,22 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                         method: 'GET',
                         credentials: 'same-origin'
                     });
-                    const buildScriptData = await buildScriptResponse.json();
-                    if (buildScriptResponse.ok && buildScriptData.download_url) {
+                    // 安全解析 JSON 响应
+                    let buildScriptData = null;
+                    const buildScriptContentType = buildScriptResponse.headers.get('content-type') || '';
+                    if (buildScriptContentType.includes('application/json')) {
+                        try {
+                            buildScriptData = await buildScriptResponse.json();
+                        } catch (e) {
+                            console.error('解析历史脚本响应失败:', e);
+                            buildScriptData = { error: '无效的 JSON 响应' };
+                        }
+                    } else {
+                        const text = await buildScriptResponse.text();
+                        buildScriptData = { error: `非 JSON 响应 (${buildScriptResponse.status})` };
+                    }
+                    
+                    if (buildScriptResponse.ok && buildScriptData?.download_url) {
                         buildScriptUrl = buildScriptData.download_url;
                     }
                 }
@@ -3244,7 +3273,21 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                         })
                     });
                     
-                    const taskEnvScriptData = await taskEnvScriptResponse.json();
+                    // 安全解析 JSON 响应
+                    let taskEnvScriptData = null;
+                    const taskEnvScriptContentType = taskEnvScriptResponse.headers.get('content-type') || '';
+                    if (taskEnvScriptContentType.includes('application/json')) {
+                        try {
+                            taskEnvScriptData = await taskEnvScriptResponse.json();
+                        } catch (e) {
+                            console.error('解析环境变量脚本响应失败:', e);
+                            continue; // 跳过失败的任务
+                        }
+                    } else {
+                        console.error(`环境变量脚本响应非 JSON (${taskEnvScriptResponse.status})`);
+                        continue; // 跳过失败的任务
+                    }
+                    
                     if (!taskEnvScriptResponse.ok) {
                         continue; // 跳过失败的任务
                     }
@@ -3421,9 +3464,24 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                     })
                 });
 
-                const runScriptData = await runScriptResponse.json();
+                // 安全解析 JSON 响应
+                const runScriptContentType = runScriptResponse.headers.get('content-type') || '';
+                let runScriptData = null;
+                if (runScriptContentType.includes('application/json')) {
+                    try {
+                        runScriptData = await runScriptResponse.json();
+                    } catch (e) {
+                        alert('保存运行脚本失败：服务器返回了无效的 JSON 响应');
+                        return;
+                    }
+                } else {
+                    const text = await runScriptResponse.text();
+                    alert(`保存运行脚本失败：服务器返回了非 JSON 响应 (${runScriptResponse.status}): ${text.substring(0, 100)}`);
+                    return;
+                }
+                
                 if (!runScriptResponse.ok) {
-                    alert('保存运行脚本失败：' + (runScriptData.error || '未知错误'));
+                    alert('保存运行脚本失败：' + (runScriptData?.error || '未知错误'));
                     return;
                 }
 
@@ -3437,11 +3495,26 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                         method: 'GET',
                         credentials: 'same-origin'
                     });
-                    const buildScriptData = await buildScriptResponse.json();
-                    if (buildScriptResponse.ok && buildScriptData.download_url) {
+                    // 安全解析 JSON 响应
+                    let buildScriptData = null;
+                    const buildScriptContentType = buildScriptResponse.headers.get('content-type') || '';
+                    if (buildScriptContentType.includes('application/json')) {
+                        try {
+                            buildScriptData = await buildScriptResponse.json();
+                        } catch (e) {
+                            alert('获取历史脚本下载链接失败：服务器返回了无效的 JSON 响应');
+                            return;
+                        }
+                    } else {
+                        const text = await buildScriptResponse.text();
+                        alert(`获取历史脚本下载链接失败：服务器返回了非 JSON 响应 (${buildScriptResponse.status}): ${text.substring(0, 100)}`);
+                        return;
+                    }
+                    
+                    if (buildScriptResponse.ok && buildScriptData?.download_url) {
                         buildScriptUrl = buildScriptData.download_url;
                     } else {
-                        alert('获取历史脚本下载链接失败：' + (buildScriptData.error || '未知错误'));
+                        alert('获取历史脚本下载链接失败：' + (buildScriptData?.error || '未知错误'));
                         return;
                     }
                 }
@@ -3488,9 +3561,23 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                             })
                         });
 
-                        const envScriptData = await envScriptResponse.json();
+                        // 检查环境变量脚本保存响应
+                        const envScriptContentType = envScriptResponse.headers.get('content-type') || '';
+                        let envScriptData = null;
+                        
+                        if (envScriptContentType.includes('application/json')) {
+                            try {
+                                envScriptData = await envScriptResponse.json();
+                            } catch (e) {
+                                throw new Error('保存环境变量脚本失败：服务器返回了无效的 JSON 响应');
+                            }
+                        } else {
+                            const text = await envScriptResponse.text();
+                            throw new Error(`保存环境变量脚本失败：服务器返回了非 JSON 响应 (${envScriptResponse.status})`);
+                        }
+                        
                         if (!envScriptResponse.ok) {
-                            throw new Error('保存环境变量脚本失败：' + (envScriptData.error || '未知错误'));
+                            throw new Error('保存环境变量脚本失败：' + (envScriptData?.error || '未知错误'));
                         }
 
                         const envScriptUrl = envScriptData.download_url;
@@ -3553,13 +3640,48 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                             })
                         });
 
-                        const data = await response.json();
+                        // 检查响应类型
+                        const contentType = response.headers.get('content-type') || '';
+                        let data = null;
+                        let errorMessage = '未知错误';
+                        
                         if (response.ok) {
+                            // 成功响应，尝试解析 JSON
+                            if (contentType.includes('application/json')) {
+                                try {
+                                    data = await response.json();
+                                } catch (e) {
+                                    errorMessage = '服务器返回了无效的 JSON 响应';
+                                    throw new Error(errorMessage);
+                                }
+                            } else {
+                                // 非 JSON 响应，尝试获取文本
+                                const text = await response.text();
+                                errorMessage = `服务器返回了非 JSON 响应: ${text.substring(0, 100)}`;
+                                throw new Error(errorMessage);
+                            }
+                            
                             successCount++;
                             console.log(`✓ 任务 ${i + 1}/${totalTasks} 创建成功: ${deploymentName}`);
                         } else {
+                            // 错误响应，尝试解析 JSON
+                            if (contentType.includes('application/json')) {
+                                try {
+                                    data = await response.json();
+                                    errorMessage = data.error || data.message || `HTTP ${response.status}: ${response.statusText}`;
+                                } catch (e) {
+                                    // JSON 解析失败，尝试获取文本
+                                    const text = await response.text();
+                                    errorMessage = `HTTP ${response.status}: ${text.substring(0, 200) || response.statusText}`;
+                                }
+                            } else {
+                                // 非 JSON 错误响应，获取文本
+                                const text = await response.text();
+                                errorMessage = `HTTP ${response.status}: ${text.substring(0, 200) || response.statusText}`;
+                            }
+                            
                             failCount++;
-                            const errorMsg = `任务 ${i + 1}/${totalTasks} (${deploymentName}): ${data.error || '未知错误'}`;
+                            const errorMsg = `任务 ${i + 1}/${totalTasks} (${deploymentName}): ${errorMessage}`;
                             errors.push(errorMsg);
                             console.error(`✗ ${errorMsg}`);
                         }
@@ -4406,14 +4528,19 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                 envVars['JOB_NAME'] = deploymentNameVal;
                 envVars['GPU_NUM'] = gpuNumStr;
                 
-                document.querySelectorAll('.env-var-row').forEach(row => {
-                    const keyInput = row.querySelector('.env-var-key');
-                    const valueInput = row.querySelector('.env-var-value');
+                // 收集所有环境变量（排除只读的 JOB_NAME 和 GPU_NUM，因为它们会自动同步）
+                document.querySelectorAll('.env-var-item').forEach(item => {
+                    const keyInput = item.querySelector('.env-var-key');
+                    const valueInput = item.querySelector('.env-var-value');
                     if (keyInput && valueInput) {
                         const key = keyInput.value.trim();
                         const value = valueInput.value.trim();
-                        if (key) {
-                            envVars[key] = value;
+                        // 跳过只读的环境变量（JOB_NAME 和 GPU_NUM），因为它们会自动同步
+                        if (key && !keyInput.readOnly && value) {
+                            // 如果同一个变量名有多个值，只保存第一个（保存配置时不需要多值）
+                            if (!envVars[key]) {
+                                envVars[key] = value;
+                            }
                         }
                     }
                 });

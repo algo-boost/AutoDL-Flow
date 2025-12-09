@@ -24,7 +24,9 @@ app = Flask(__name__,
 app.secret_key = SECRET_KEY
 
 # 注册全局错误处理器
+from werkzeug.exceptions import NotFound
 app.register_error_handler(APIError, handle_api_error)
+app.register_error_handler(NotFound, handle_generic_error)
 app.register_error_handler(Exception, handle_generic_error)
 
 # 注册所有路由

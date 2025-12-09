@@ -60,14 +60,41 @@ def handle_api_error(error):
 
 def handle_generic_error(error):
     """处理通用异常"""
-    logger.error(
-        f"Unhandled exception: {str(error)}",
-        exc_info=True,
-        extra={
-            'path': request.path if request else None,
-            'method': request.method if request else None
-        }
-    )
+    from werkzeug.exceptions import NotFound
+    
+    # 如果是 404 错误，记录详细的请求信息
+    if isinstance(error, NotFound):
+        logger.warning(
+            f"404 Not Found: {request.path if request else 'unknown'}",
+            exc_info=True,
+            extra={
+                'path': request.path if request else None,
+                'method': request.method if request else None,
+                'url': request.url if request else None,
+                'query_string': request.query_string.decode('utf-8') if request and request.query_string else '',
+                'remote_addr': request.remote_addr if request else None
+            }
+        )
+    else:
+        logger.error(
+            f"Unhandled exception: {str(error)}",
+            exc_info=True,
+            extra={
+                'path': request.path if request else None,
+                'method': request.method if request else None,
+                'url': request.url if request else None
+            }
+        )
+    
+    # 对于 404 错误，返回 404 状态码
+    if isinstance(error, NotFound):
+        response = jsonify({
+            'error': 'Not Found',
+            'error_code': 'NOT_FOUND',
+            'path': request.path if request else None
+        })
+        response.status_code = 404
+        return response
     
     response = jsonify({
         'error': 'Internal server error',

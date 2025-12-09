@@ -740,9 +740,9 @@ def register_routes(bp):
                     # 移除命令结尾的 &&
                     cmd = re.sub(r'\s*&&\s*$', '', cmd)
                 
-                # 记录命令（用于调试）
+                # 记录命令（用于调试，使用 info 级别）
                 log_error(f"创建部署命令: {cmd[:200]}..." if len(cmd) > 200 else f"创建部署命令: {cmd}", 
-                         username=username, deployment_name=name)
+                         level='info', username=username, deployment_name=name)
                 
                 # 调用 create_deployment 方法
                 deployment_uuid = client.create_deployment(

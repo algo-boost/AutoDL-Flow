@@ -66,46 +66,56 @@ def find_file_in_user_dirs(
             CONFIGS_STORAGE_DIR
         ]
     
-    # 如果文件名包含路径分隔符，可能是相对路径
+    # 如果文件名包含路径分隔符，可能是相对路径（如 username/filename）
+    actual_filename = filename
     if '/' in filename or '\\' in filename:
         # 处理相对路径格式（如 username/filename）
         parts = filename.replace('\\', '/').split('/')
         if len(parts) == 2:
             # 格式：username/filename
             user_dir_name, actual_filename = parts
+            # 先尝试在指定用户目录查找
             for base_dir in search_dirs:
+                if not base_dir.exists():
+                    continue
                 potential_path = base_dir / user_dir_name / actual_filename
                 if potential_path.exists() and potential_path.is_file():
                     return potential_path
         else:
-            # 直接路径，尝试在临时目录查找
+            # 多级路径，尝试在临时目录查找
             for base_dir in [TEMP_SCRIPTS_DIR]:
+                if not base_dir.exists():
+                    continue
                 potential_path = base_dir / filename
                 if potential_path.exists() and potential_path.is_file():
                     return potential_path
     
-    # 搜索用户目录
+    # 搜索用户目录（使用实际文件名，不包含路径）
     for base_dir in search_dirs:
         if not base_dir.exists():
             continue
         
         # 先检查用户自己的目录
         user_dir = get_user_storage_dir(base_dir, username)
-        potential_path = user_dir / filename
+        potential_path = user_dir / actual_filename
         if potential_path.exists() and potential_path.is_file():
             return potential_path
         
         # 如果允许搜索所有用户，检查其他用户目录
         if search_all_users:
-            for item in base_dir.iterdir():
-                if item.is_dir() and item != user_dir:
-                    potential_path = item / filename
-                    if potential_path.exists() and potential_path.is_file():
-                        return potential_path
+            try:
+                for item in base_dir.iterdir():
+                    if item.is_dir() and item != user_dir:
+                        potential_path = item / actual_filename
+                        if potential_path.exists() and potential_path.is_file():
+                            return potential_path
+            except (PermissionError, OSError) as e:
+                # 忽略权限错误，继续搜索
+                pass
         
         # 检查根目录（admin 的旧文件可能在这里）
         if base_dir == SCRIPTS_STORAGE_DIR:
-            potential_path = base_dir / filename
+            potential_path = base_dir / actual_filename
             if potential_path.exists() and potential_path.is_file():
                 return potential_path
     

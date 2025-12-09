@@ -121,6 +121,15 @@ log_success "当前目录: $(pwd)"
                 if not repo:
                     continue
                 
+                repo_url = repo.get('url', '')
+                repo_branch = repo.get('branch', '')
+                
+                # 构建 git clone 命令
+                if repo_branch:
+                    clone_cmd = f'git clone -b {repo_branch} {repo_url}'
+                else:
+                    clone_cmd = f'git clone {repo_url}'
+                
                 script += f"""
 # 克隆 {repo_name}
 log_step "克隆 {repo_name} 仓库"
@@ -128,7 +137,7 @@ if [ -d "{repo_name}" ]; then
     log_info "{repo_name} 目录已存在，删除旧目录"
     rm -rf {repo_name}
 fi
-git clone {repo.get('url', '')}
+{clone_cmd}
 log_success "{repo_name} 克隆完成"
 """
                 if should_install and repo.get('install_cmds'):
@@ -570,11 +579,19 @@ log_success "Git SSH 配置完成"
 
 cd /root
 """
+                # 构建 cv-scripts 的 git clone 命令
+                cv_scripts_url = cv_scripts_repo.get('url', '')
+                cv_scripts_branch = cv_scripts_repo.get('branch', '')
+                if cv_scripts_branch:
+                    cv_scripts_clone_cmd = f'git clone -b {cv_scripts_branch} {cv_scripts_url}'
+                else:
+                    cv_scripts_clone_cmd = f'git clone {cv_scripts_url}'
+                
                 script += f"""
 # 克隆 cv-scripts 仓库（数据集生成需要）
 log_step "克隆 cv-scripts 仓库..."
 if [ ! -d "/root/cv-scripts" ]; then
-    git clone {cv_scripts_repo.get('url', '')}
+    {cv_scripts_clone_cmd}
     log_success "cv-scripts 克隆完成"
 else
     log_info "cv-scripts 仓库已存在"

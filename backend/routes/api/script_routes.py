@@ -308,9 +308,18 @@ def register_routes(bp):
     def serve_script(token):
         """通过token提供脚本文件下载服务（不暴露服务器信息）"""
         try:
+            # 记录请求信息（用于调试）
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"收到下载请求: token={token[:20]}... (长度: {len(token)})")
+            
             # 验证token
             filename = verify_download_token(token)
             if not filename:
+                # 记录无效或过期的 token 访问
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Invalid or expired download token attempted: {token[:20]}...")
                 return jsonify({'error': 'Invalid or expired token'}), 403
             
             # 使用统一的文件查找工具
@@ -338,7 +347,17 @@ def register_routes(bp):
                 )
             
             if not file_path or not file_path.exists():
-                print(f"File not found when serving: {filename}")
+                # 记录文件未找到的情况，包含更详细的调试信息
+                import logging
+                logger = logging.getLogger(__name__)
+                from backend.config import UPLOADED_FILES_DIR, SCRIPTS_STORAGE_DIR, TEMP_SCRIPTS_DIR
+                logger.warning(
+                    f"File not found when serving via token: filename={filename}, "
+                    f"token={token[:20]}..., "
+                    f"uploaded_dir={UPLOADED_FILES_DIR}, "
+                    f"scripts_dir={SCRIPTS_STORAGE_DIR}, "
+                    f"temp_dir={TEMP_SCRIPTS_DIR}"
+                )
                 return jsonify({'error': f'File not found: {filename}'}), 404
             
             if not file_path.is_file():
@@ -346,13 +365,19 @@ def register_routes(bp):
             
             print(f"Serving file via token: {file_path}")
             
-            # 提取原始文件名（如果是临时文件，可能需要提取）
-            download_name = filename
+            # 提取原始文件名（用于下载时的文件名）
+            # 如果 filename 包含路径分隔符（如 username/filename），只使用文件名部分
+            if '/' in filename or '\\' in filename:
+                download_name = filename.split('/')[-1].split('\\')[-1]
+            else:
+                download_name = filename
+            
+            # 如果是临时文件，可能需要特殊处理
             if file_path.parent.parent == TEMP_SCRIPTS_DIR:
                 # 临时文件，提取原始文件名（run.sh 或 run.py）
-                if filename.endswith('.py'):
+                if download_name.endswith('.py'):
                     download_name = 'run.py'
-                elif filename.endswith('.sh'):
+                elif download_name.endswith('.sh'):
                     download_name = 'run.sh'
             
             return send_file(
