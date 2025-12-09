@@ -5,6 +5,7 @@ from flask import request, jsonify, session
 from backend.auth.decorators import login_required
 from backend.auth.utils import verify_password, hash_password, get_all_accounts, save_accounts
 from backend.services.config_service import ConfigService
+from backend.services.category_service import CategoryService
 from backend.utils.storage import get_user_env_config_file
 import json
 from urllib.parse import unquote
@@ -13,6 +14,7 @@ from urllib.parse import unquote
 def register_routes(bp):
     """注册用户相关路由"""
     config_service = ConfigService()
+    category_service = CategoryService()
     
     @bp.route('/user/change-password', methods=['POST'])
     @login_required
@@ -308,6 +310,33 @@ def register_routes(bp):
                 return jsonify({'success': True, 'message': 'Token 已删除'})
             else:
                 return jsonify({'error': '删除失败'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @bp.route('/user/category-groups', methods=['GET'])
+    @login_required
+    def get_user_category_groups():
+        """获取当前用户的类别映射组"""
+        try:
+            username = session.get('username', 'admin')
+            category_groups = category_service.load_user_category_groups(username)
+            return jsonify({'category_groups': category_groups})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @bp.route('/user/category-groups', methods=['POST'])
+    @login_required
+    def save_user_category_groups():
+        """保存当前用户的类别映射组"""
+        try:
+            username = session.get('username', 'admin')
+            data = request.json
+            category_groups = data.get('category_groups', [])
+            
+            if category_service.save_user_category_groups(username, category_groups):
+                return jsonify({'success': True})
+            else:
+                return jsonify({'error': 'Failed to save user category groups'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 

@@ -23,20 +23,15 @@
             color: #333;
             position: relative;
             font-size: 0.9em;
-            display: flex;
-            flex-direction: column;
         }
 
         .container {
             width: 100%;
-            height: 100vh;
             margin: 0;
             background: white;
             border-radius: 0;
             box-shadow: none;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            overflow: visible;
         }
 
         .header {
@@ -1860,22 +1855,46 @@
                 
                 // 合并并去重
                 const allGroups = [];
-                if (globalResponse.ok && globalData.category_groups) {
+                
+                // 加载全局共享的类别映射组
+                if (globalResponse.ok && globalData.category_groups && Array.isArray(globalData.category_groups)) {
                     allGroups.push(...globalData.category_groups);
+                    console.log('加载全局类别映射组:', globalData.category_groups);
+                } else {
+                    console.warn('全局类别映射组加载失败或为空:', globalResponse.status, globalData);
                 }
-                if (userResponse.ok && userData.category_groups) {
+                
+                // 加载用户自己的类别映射组
+                if (userResponse.ok && userData.category_groups && Array.isArray(userData.category_groups)) {
                     allGroups.push(...userData.category_groups);
+                    console.log('加载用户类别映射组:', userData.category_groups);
+                } else {
+                    console.warn('用户类别映射组加载失败或为空:', userResponse.status, userData);
                 }
                 
-                // 去重并保持顺序
-                const uniqueGroups = [...new Set(allGroups)];
+                // 去重并保持顺序（全局的在前，用户自己的在后）
+                const uniqueGroups = [];
+                const seen = new Set();
                 
+                // 先添加全局的（已经在allGroups的前面）
+                for (const group of allGroups) {
+                    if (group && typeof group === 'string' && group.trim() && !seen.has(group.trim())) {
+                        const trimmedGroup = group.trim();
+                        seen.add(trimmedGroup);
+                        uniqueGroups.push(trimmedGroup);
+                    }
+                }
+                
+                // 清空下拉框并添加选项
+                select.innerHTML = '<option value="">（不映射）</option>';
                 uniqueGroups.forEach(groupName => {
                     const option = document.createElement('option');
                     option.value = groupName;
                     option.textContent = groupName;
                     select.appendChild(option);
                 });
+                
+                console.log('类别映射组加载完成，共', uniqueGroups.length, '个:', uniqueGroups);
             } catch (error) {
                 console.error('加载类别映射组失败:', error);
             }
@@ -3739,7 +3758,7 @@
             const isLoggedIn = await checkLoginStatus();
             if (isLoggedIn) {
                 initRepos();
-                await initCategoryGroups();
+                // initCategoryGroups() 已在 DOMContentLoaded 中调用，避免重复
                 renderSnapshots();
                 toggleSection('repos');
                 toggleSection('snapshots');
