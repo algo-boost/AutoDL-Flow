@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>实验管理 - AutoDL Flow</title>
+    <title>任务监控 - AutoDL Flow</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <style>
         * {
@@ -14,23 +14,29 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
             color: #333;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
+            width: 100%;
+            height: 100vh;
+            margin: 0;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
             padding: 20px 30px;
             display: flex;
@@ -72,6 +78,8 @@
 
         .content {
             padding: 30px;
+            flex: 1;
+            overflow-y: auto;
         }
 
         .section {
@@ -92,7 +100,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -100,12 +108,11 @@
             font-size: 1em;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: background 0.2s ease;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            background: #5568d3;
         }
 
         .experiment-list {
@@ -172,8 +179,10 @@
         }
 
         .placeholder-icon {
-            font-size: 4em;
+            font-size: 3em;
             margin-bottom: 20px;
+            color: #ccc;
+            font-weight: 300;
         }
 
         .placeholder-text {
@@ -191,34 +200,35 @@
     <div class="container">
         <div class="header">
             <div class="header-left">
-                <h1>📊 实验管理</h1>
+                <h1>任务监控</h1>
             </div>
             <div class="nav-buttons">
+                <a href="/task_setup" class="btn-nav">任务配置</a>
+                <a href="/task_submit" class="btn-nav">任务部署</a>
+                <a href="/experiment_manage" class="btn-nav">任务监控</a>
                 <a href="/" class="btn-nav">主菜单</a>
-                <a href="/task_setup" class="btn-nav">任务设置</a>
                 <button class="btn-nav" onclick="logout()">退出登录</button>
             </div>
         </div>
 
         <div class="content">
             <div class="section">
-                <div class="section-title">实验列表</div>
-                <button class="btn-primary" onclick="loadExperiments()">刷新实验列表</button>
+                <div class="section-title">任务列表</div>
+                <button class="btn-primary" onclick="loadExperiments()">刷新任务列表</button>
                 <div id="experiments-list" class="experiment-list">
                     <div class="placeholder">
-                        <div class="placeholder-icon">📊</div>
-                        <div class="placeholder-text">实验管理功能</div>
-                        <div class="placeholder-hint">点击"刷新实验列表"加载实验信息，或等待功能进一步完善</div>
+                        <div class="placeholder-text">任务监控功能</div>
+                        <div class="placeholder-hint">点击"刷新任务列表"加载任务信息，或等待功能进一步完善</div>
                     </div>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">实验统计</div>
+                <div class="section-title">任务统计</div>
                 <div id="experiment-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div style="background: white; padding: 20px; border-radius: 8px; text-align: center;">
                         <div style="font-size: 2em; font-weight: 600; color: #667eea;">0</div>
-                        <div style="color: #666; margin-top: 5px;">总实验数</div>
+                        <div style="color: #666; margin-top: 5px;">总任务数</div>
                     </div>
                     <div style="background: white; padding: 20px; border-radius: 8px; text-align: center;">
                         <div style="font-size: 2em; font-weight: 600; color: #28a745;">0</div>
@@ -254,7 +264,7 @@
 
         async function loadExperiments() {
             const listDiv = document.getElementById('experiments-list');
-            listDiv.innerHTML = '<div class="placeholder"><div class="placeholder-icon">⏳</div><div class="placeholder-text">加载中...</div></div>';
+            listDiv.innerHTML = '<div class="placeholder"><div class="placeholder-text">加载中...</div></div>';
 
             try {
                 const response = await fetch('/api/experiments/list', {
@@ -270,7 +280,7 @@
                             const card = document.createElement('div');
                             card.className = 'experiment-card';
                             card.innerHTML = `
-                                <div class="experiment-name">${exp.name || '未命名实验'}</div>
+                                <div class="experiment-name">${exp.name || '未命名任务'}</div>
                                 <div class="experiment-info">状态: ${exp.status || '未知'}</div>
                                 <div class="experiment-info">创建时间: ${exp.created_at || '未知'}</div>
                                 <div class="experiment-info">描述: ${exp.description || '无'}</div>
@@ -280,9 +290,8 @@
                     } else {
                         listDiv.innerHTML = `
                             <div class="placeholder">
-                                <div class="placeholder-icon">📊</div>
-                                <div class="placeholder-text">暂无实验</div>
-                                <div class="placeholder-hint">实验列表为空</div>
+                                <div class="placeholder-text">暂无任务</div>
+                                <div class="placeholder-hint">任务列表为空</div>
                             </div>
                         `;
                     }

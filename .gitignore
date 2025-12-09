@@ -47,7 +47,7 @@ instance/
 !backend/
 !frontend/
 !scripts/
-!data/
+data/
 
 # 明确忽略根目录下的所有 .md 文件（除了 README.md 和 PROJECT_STRUCTURE.md）
 /*.md

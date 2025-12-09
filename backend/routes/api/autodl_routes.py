@@ -3,7 +3,7 @@ AutoDL Flow - AutoDL API 路由
 """
 from flask import request, jsonify, session
 from backend.auth.decorators import login_required
-from backend.config import AUTODL_AVAILABLE, DATACENTER_MAPPING, RUN_SCRIPT_TEMPLATES_FILE, TEMP_SCRIPTS_DIR
+from backend.config import AUTODL_AVAILABLE, DATACENTER_MAPPING, RUN_SCRIPT_TEMPLATES_FILE, TEMP_SCRIPTS_DIR, UPLOADED_FILES_DIR
 from backend.utils.encryption import load_user_autodl_token
 from backend.utils.storage import (
     get_user_deployment_config_dir,
@@ -1130,6 +1130,138 @@ def register_routes(bp):
             })
         except Exception as e:
             print(f"Error saving record to config: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': str(e)}), 500
+    
+    @bp.route('/autodl/upload-file', methods=['POST'])
+    @login_required
+    def upload_file():
+        """上传文件到服务器"""
+        try:
+            username = session.get('username', 'admin')
+            
+            if 'file' not in request.files:
+                return jsonify({'error': '没有文件被上传'}), 400
+            
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({'error': '文件名为空'}), 400
+            
+            # 获取目标路径（可选）
+            target_path = request.form.get('target_path', '').strip()
+            
+            # 创建用户目录
+            user_upload_dir = UPLOADED_FILES_DIR / username
+            user_upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 保存文件
+            filename = file.filename
+            # 处理文件名冲突
+            file_path = user_upload_dir / filename
+            counter = 1
+            while file_path.exists():
+                name_part = file_path.stem
+                ext_part = file_path.suffix
+                file_path = user_upload_dir / f"{name_part}_{counter}{ext_part}"
+                counter += 1
+            
+            file.save(str(file_path))
+            
+            # 生成下载 token
+            relative_path = file_path.relative_to(UPLOADED_FILES_DIR)
+            token = generate_download_token(str(relative_path))
+            
+            # 从请求中获取正确的 host 和 scheme（用于生成完整URL）
+            scheme = request.headers.get('X-Forwarded-Proto', 'http')
+            if scheme == 'http' and request.is_secure:
+                scheme = 'https'
+            
+            host = request.headers.get('X-Forwarded-Host', request.headers.get('Host', request.host))
+            if not host:
+                host = request.host or 'localhost:6008'
+            
+            download_url = f"{scheme}://{host}/api/download/{token}"
+            
+            return jsonify({
+                'success': True,
+                'filename': file_path.name,
+                'original_filename': filename,
+                'target_path': target_path,
+                'size': file_path.stat().st_size,
+                'upload_time': datetime.now().isoformat(),
+                'download_token': token,
+                'download_url': download_url
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': str(e)}), 500
+    
+    @bp.route('/autodl/uploaded-files', methods=['GET'])
+    @login_required
+    def list_uploaded_files():
+        """列出用户上传的文件"""
+        try:
+            username = session.get('username', 'admin')
+            user_upload_dir = UPLOADED_FILES_DIR / username
+            
+            # 从请求中获取正确的 host 和 scheme（用于生成完整URL）
+            scheme = request.headers.get('X-Forwarded-Proto', 'http')
+            if scheme == 'http' and request.is_secure:
+                scheme = 'https'
+            
+            host = request.headers.get('X-Forwarded-Host', request.headers.get('Host', request.host))
+            if not host:
+                host = request.host or 'localhost:6008'
+            
+            files = []
+            if user_upload_dir.exists():
+                for file_path in user_upload_dir.iterdir():
+                    if file_path.is_file():
+                        stat = file_path.stat()
+                        relative_path = file_path.relative_to(UPLOADED_FILES_DIR)
+                        token = generate_download_token(str(relative_path))
+                        download_url = f"{scheme}://{host}/api/download/{token}"
+                        files.append({
+                            'filename': file_path.name,
+                            'size': stat.st_size,
+                            'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                            'download_token': token,
+                            'download_url': download_url
+                        })
+            
+            # 按修改时间倒序排列
+            files.sort(key=lambda x: x['modified'], reverse=True)
+            
+            return jsonify({'files': files})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': str(e)}), 500
+    
+    @bp.route('/autodl/uploaded-files/<filename>', methods=['DELETE'])
+    @login_required
+    def delete_uploaded_file(filename):
+        """删除上传的文件"""
+        try:
+            username = session.get('username', 'admin')
+            user_upload_dir = UPLOADED_FILES_DIR / username
+            file_path = user_upload_dir / filename
+            
+            # 安全检查：确保文件在用户目录内
+            try:
+                file_path.resolve().relative_to(user_upload_dir.resolve())
+            except ValueError:
+                return jsonify({'error': '无权访问该文件'}), 403
+            
+            if not file_path.exists():
+                return jsonify({'error': '文件不存在'}), 404
+            
+            file_path.unlink()
+            
+            return jsonify({'success': True, 'message': '文件已删除'})
+        except Exception as e:
             import traceback
             traceback.print_exc()
             return jsonify({'error': str(e)}), 500

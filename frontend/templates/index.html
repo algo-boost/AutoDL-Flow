@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>准备设置 - AutoDL Flow</title>
+    <title>任务配置 - AutoDL Flow</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <!-- Monaco Editor -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
@@ -16,25 +16,31 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             min-height: 100vh;
-            padding: 10px;
+            padding: 0;
+            margin: 0;
             color: #333;
             position: relative;
             font-size: 0.9em;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
+            width: 100%;
+            height: 100vh;
+            margin: 0;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
             padding: 20px 30px;
             text-align: center;
@@ -253,8 +259,12 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
         }
 
         .btn-primary:hover {
@@ -941,11 +951,11 @@
         /* 响应式设计 - 手机适配 */
         @media (max-width: 768px) {
             body {
-                padding: 5px;
+                padding: 0;
             }
 
             .container {
-                border-radius: 8px;
+                border-radius: 0;
             }
 
             .header {
@@ -1173,7 +1183,6 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <button class="btn btn-secondary btn-small" onclick="loadScriptsList()" title="刷新列表">
                         <span>🔄</span>
-                        <span>刷新</span>
                     </button>
                 </div>
                 <div class="scripts-list" id="scripts-list">
@@ -1186,7 +1195,6 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <button class="btn btn-secondary btn-small" onclick="loadConfigsList()" title="刷新列表">
                         <span>🔄</span>
-                        <span>刷新</span>
                     </button>
                 </div>
                 <div class="scripts-list" id="configs-list">
@@ -1310,16 +1318,19 @@
         <div class="header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h1>准备设置</h1>
+                    <h1>任务配置</h1>
                 </div>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <span style="font-size: 0.9em; opacity: 0.9;">
-                        当前用户: <strong>{{ username }}</strong>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <a href="/task_setup" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; text-decoration: none;">任务配置</a>
+                    <a href="/task_submit" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; text-decoration: none;">任务部署</a>
+                    <a href="/experiment_manage" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; text-decoration: none;">任务监控</a>
+                    <a href="/" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; text-decoration: none;">主菜单</a>
+                    <span style="font-size: 0.9em; opacity: 0.9; margin-left: 5px;">
+                        用户: <strong>{{ username }}</strong>
                         {% if is_admin %}
                         <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-left: 8px;">管理员</span>
                         {% endif %}
                     </span>
-                    <a href="/" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; text-decoration: none;">主菜单</a>
                     <button onclick="logout()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em;">登出</button>
                 </div>
             </div>
@@ -1435,12 +1446,11 @@
                 <div id="script-output" style="display: none;">
                     <div style="position: relative; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                         <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 10px 15px; border-bottom: 2px solid #dee2e6;">
-                            <span style="font-size: 0.9em; color: #495057; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                <span>💻</span>
-                                <span>代码编辑器</span>
+                            <span style="font-size: 0.9em; color: #495057; font-weight: 600;">
+                                代码编辑器
                             </span>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <button type="button" class="btn btn-primary" onclick="copyScript()" id="copy-btn" style="padding: 6px 12px; font-size: 0.85em; width: auto;">📋 复制</button>
+                                <button type="button" class="btn btn-primary" onclick="copyScript()" id="copy-btn" style="padding: 6px 12px; font-size: 0.85em; width: auto;">复制</button>
                                 <button type="button" class="btn btn-primary" onclick="toggleFullscreenScriptEditor()" style="padding: 6px 12px; font-size: 0.85em; width: auto;" title="全屏编辑">⛶ 全屏</button>
                             </div>
                         </div>
@@ -1454,7 +1464,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid #dee2e6; background: #f8f9fa;">
                             <span style="font-size: 1em; color: #495057; font-weight: 600;">全屏代码编辑器</span>
                             <div style="display: flex; gap: 10px; align-items: center;">
-                                <button type="button" class="btn btn-primary" onclick="copyScript()" style="padding: 6px 15px; font-size: 0.9em;">📋 复制</button>
+                                <button type="button" class="btn btn-primary" onclick="copyScript()" style="padding: 6px 15px; font-size: 0.9em;">📋</button>
                                 <button type="button" class="btn btn-primary" onclick="toggleFullscreenScriptEditor()" style="padding: 6px 15px; font-size: 0.9em;">关闭全屏</button>
                             </div>
                         </div>
@@ -1469,7 +1479,6 @@
                     <div class="section-title">历史脚本</div>
                     <button class="btn btn-secondary btn-small" onclick="loadScriptsList()" title="刷新列表">
                         <span>🔄</span>
-                        <span>刷新</span>
                     </button>
                 </div>
                 <div class="scripts-list" id="scripts-list">
@@ -1510,7 +1519,7 @@
 
     <!-- Toast 提示 -->
     <div id="toast" class="toast">
-        <span class="toast-icon">✓</span>
+        <span class="toast-icon"></span>
         <span id="toast-message"></span>
     </div>
 
@@ -2364,16 +2373,13 @@
                             </div>
                             <div class="script-file-actions">
                                 <button class="btn-link btn-copy-link" onclick="copyScriptLink('${escapeHtml(file.filename)}', this)" title="复制下载链接">
-                                    <span>📋</span>
-                                    <span>复制链接</span>
+                                    复制链接
                                 </button>
                                 <button class="btn-link" onclick="downloadScriptFile('${escapeHtml(file.filename)}')" title="直接下载">
-                                    <span>⬇️</span>
-                                    <span>下载</span>
+                                    下载
                                 </button>
                                 <button class="btn-link btn-delete-link" onclick="deleteScriptFile('${escapeHtml(file.filename)}', this)" title="删除脚本">
-                                    <span>🗑️</span>
-                                    <span>删除</span>
+                                    删除
                                 </button>
                             </div>
                         `;
@@ -2436,7 +2442,7 @@
                     if (success) {
                         // 更新按钮状态
                         const originalText = button.innerHTML;
-                        button.innerHTML = '<span>✓</span><span>已复制</span>';
+                        button.innerHTML = '<span>已复制</span>';
                         button.classList.add('copied');
                         
                         showToast('链接已复制到剪贴板', 'success');
@@ -2641,8 +2647,7 @@
                                     <span>加载</span>
                                 </button>
                                 <button class="btn-link btn-delete-link" onclick="deleteConfig('${escapeHtml(config.filename)}', this)" title="删除配置">
-                                    <span>🗑️</span>
-                                    <span>删除</span>
+                                    删除
                                 </button>
                             </div>
                         `;
@@ -2877,8 +2882,7 @@
                                     <span>重置密码</span>
                                 </button>
                                 <button class="btn-link btn-delete-link" onclick="deleteAccount('${escapeHtml(account.username)}')" title="删除账户">
-                                    <span>🗑️</span>
-                                    <span>删除</span>
+                                    删除
                                 </button>
                                 ` : ''}
                             </div>

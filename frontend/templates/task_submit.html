@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>任务提交 - AutoDL Flow</title>
+    <title>任务部署 - AutoDL Flow</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <!-- Monaco Editor -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
@@ -16,7 +16,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             min-height: 100vh;
             padding: 0;
             color: #333;
@@ -33,7 +33,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
             padding: 15px 20px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -189,8 +189,12 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
         }
 
         .btn-primary:hover {
@@ -252,7 +256,7 @@
         }
 
         .deployment-table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
         }
 
@@ -886,30 +890,32 @@
     <div class="container">
         <div class="header">
             <div class="header-top">
-                <h1>⚡ 任务提交</h1>
+                <h1>任务部署</h1>
                 <div class="nav-buttons">
+                    <a href="/task_setup" class="btn-nav">任务配置</a>
+                    <a href="/task_submit" class="btn-nav">任务部署</a>
+                    <a href="/experiment_manage" class="btn-nav">任务监控</a>
                     <a href="/" class="btn-nav">主菜单</a>
-                    <a href="/task_setup" class="btn-nav">任务设置</a>
                     <button class="btn-nav" onclick="logout()">退出登录</button>
                 </div>
             </div>
             <div class="nav-tabs">
-                <button class="nav-tab active" data-tab="submit" onclick="switchTab('submit', this)">实验提交</button>
-                <button class="nav-tab" data-tab="records" onclick="switchTab('records', this)">提交记录</button>
-                <button class="nav-tab" data-tab="deployments" onclick="switchTab('deployments', this)">部署列表</button>
-                <button class="nav-tab" data-tab="resources" onclick="switchTab('resources', this)">资源池</button>
-                <button class="nav-tab" data-tab="settings" onclick="switchTab('settings', this)">设置</button>
+                <button class="nav-tab active" data-tab="submit" onclick="switchTab('submit', this)">创建任务</button>
+                <button class="nav-tab" data-tab="records" onclick="switchTab('records', this)">任务记录</button>
+                <button class="nav-tab" data-tab="deployments" onclick="switchTab('deployments', this)">运行中任务</button>
+                <button class="nav-tab" data-tab="resources" onclick="switchTab('resources', this)">GPU 资源</button>
+                <button class="nav-tab" data-tab="settings" onclick="switchTab('settings', this)">系统设置</button>
             </div>
         </div>
 
         <div class="content-area">
             {% if not autodl_available %}
             <div class="section">
-                <div class="section-title">⚠️ 警告</div>
+                <div class="section-title">警告</div>
                 <p>autodl-api 库未安装。请运行 <code>pip install autodl-api</code> 安装。</p>
             </div>
             {% else %}
-            <!-- 实验提交标签页 -->
+            <!-- 创建任务标签页 -->
             <div id="tab-submit" class="tab-content active">
                 <div class="section">
                     <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -1019,6 +1025,28 @@
                     </div>
                     
                     <div class="form-group">
+                        <label class="form-label">上传文件（可选）</label>
+                        <small style="color: #666; font-size: 0.85em; display: block; margin-bottom: 8px;">上传的文件将在任务启动时自动下载到 AutoDL 服务器</small>
+                        <div style="border: 2px dashed #ced4da; border-radius: 8px; padding: 20px; background: #f8f9fa; margin-bottom: 10px;">
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <input type="file" id="file_upload_input" style="display: none;" onchange="handleFileSelect(event)" multiple>
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('file_upload_input').click()" style="width: auto; padding: 8px 15px; font-size: 0.9em;">
+                                    选择文件
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="loadUploadedFiles()" style="width: auto; padding: 8px 15px; font-size: 0.9em; background: #17a2b8;">
+                                    刷新列表
+                                </button>
+                            </div>
+                            <div id="uploaded-files-list" style="margin-top: 15px;">
+                                <div style="color: #6c757d; font-size: 0.9em;">正在加载已上传的文件...</div>
+                            </div>
+                        </div>
+                        <div id="selected-files-list" style="margin-top: 10px;">
+                            <!-- 选中的文件列表将显示在这里 -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
                         <label class="form-label">环境变量 *</label>
                         <div id="env-vars-container" style="margin-bottom: 8px;">
                             <!-- 环境变量输入框将动态添加 -->
@@ -1030,9 +1058,8 @@
                         <label class="form-label">运行脚本代码 *</label>
                         <div id="code-editor-container" style="position: relative; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                             <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 10px 15px; border-bottom: 2px solid #dee2e6;">
-                                <span style="font-size: 0.9em; color: #495057; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                    <span>💻</span>
-                                    <span>代码编辑器</span>
+                                <span style="font-size: 0.9em; color: #495057; font-weight: 600;">
+                                    代码编辑器
                                 </span>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <select id="run_script_type" onchange="updateRunScriptEditor()" style="padding: 6px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.9em; background: white; color: #495057; cursor: pointer; font-weight: 600; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -1068,17 +1095,48 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="previewCommand()" style="background: #17a2b8;">执行预览</button>
                         <button class="btn btn-primary" onclick="createDeployment()">创建部署</button>
                         <button class="btn btn-primary" onclick="saveDeploymentConfig()" style="background: #28a745;">保存设置</button>
+                    </div>
+                    
+                    <!-- 预览命令弹窗 -->
+                    <div id="command-preview-modal" class="modal-overlay" style="display: none; z-index: 2000;">
+                        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow: auto;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #dee2e6;">
+                                <h2 style="margin: 0; color: #495057; font-size: 1.3em;">📋 执行预览</h2>
+                                <button type="button" onclick="closeCommandPreview()" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.9em;">关闭</button>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <label style="display: block; font-weight: 600; color: #495057;">执行命令：</label>
+                                    <div id="preview-task-count" style="font-weight: 600; color: #17a2b8; font-size: 1em;"></div>
+                                </div>
+                                <pre id="command-preview-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 15px; font-family: 'Courier New', monospace; font-size: 0.9em; color: #212529; white-space: pre-wrap; word-wrap: break-word; max-height: 500px; overflow-y: auto; margin: 0;"></pre>
+                            </div>
+                            <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 12px; border-radius: 4px; margin-top: 15px;">
+                                <div style="font-weight: 600; color: #1976D2; margin-bottom: 6px;">💡 提示</div>
+                                    <div style="color: #495057; font-size: 0.9em; line-height: 1.6;">
+                                    此命令将在 AutoDL 容器启动时执行。命令包含以下步骤：<br>
+                                    1. 下载上传的文件（如果已选择）<br>
+                                    2. 下载构建脚本 build.sh（如果已选择）<br>
+                                    3. 下载环境变量脚本 env.sh<br>
+                                    4. 加载环境变量<br>
+                                    5. 下载运行脚本 run.sh/run.py<br>
+                                    6. 执行运行脚本<br><br>
+                                    <strong>批量提交说明：</strong>同一个环境变量名可以添加多行，每行一个值，系统会自动生成所有组合并批量提交。
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 提交记录标签页 -->
+            <!-- 任务记录标签页 -->
             <div id="tab-records" class="tab-content">
                 <div class="section">
                     <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <span>提交记录</span>
+                        <span>任务记录</span>
                         <button class="btn btn-primary" onclick="loadRecords()" style="width: auto; padding: 6px 12px; font-size: 0.9em;">刷新列表</button>
                     </div>
                     <div id="records-list" class="config-list">
@@ -1095,34 +1153,34 @@
                 </div>
             </div>
 
-            <!-- 部署列表标签页 -->
+            <!-- 运行中任务标签页 -->
             <div id="tab-deployments" class="tab-content">
                 <div class="section">
                     <div class="section-title">
-                        <span>部署列表</span>
+                        <span>运行中任务</span>
                         <button class="btn btn-primary" onclick="loadDeployments()" style="margin-left: auto;">刷新列表</button>
                     </div>
                     <div id="deployments-list" class="deployment-list">
-                        <div class="loading">点击"刷新列表"加载部署信息</div>
+                        <div class="loading">点击"刷新列表"加载运行中任务信息</div>
                     </div>
                 </div>
             </div>
             
 
-            <!-- 资源池标签页 -->
+            <!-- GPU 资源标签页 -->
             <div id="tab-resources" class="tab-content">
                 <div class="section">
                     <div class="section-title">
-                        <span>GPU 资源池</span>
+                        <span>GPU 资源</span>
                         <button class="btn btn-primary" onclick="loadGPUStock()" style="margin-left: auto;">刷新资源</button>
                     </div>
                     <div id="gpu-stock-content">
-                        <div class="loading">点击"刷新资源"加载 GPU 库存信息</div>
+                        <div class="loading">点击"刷新资源"加载 GPU 资源信息</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 设置标签页 -->
+            <!-- 系统设置标签页 -->
             <div id="tab-settings" class="tab-content">
                 <div class="section">
                     <div class="section-title">⚙️ Token 配置</div>
@@ -1248,6 +1306,8 @@
             await checkLoginStatus();
             await checkStoredToken();
             await autoConnect();
+            // 加载已上传的文件列表
+            await loadUploadedFiles();
         }
 
         // 检查登录状态
@@ -1487,11 +1547,11 @@
             
             // 根据标签页加载数据
             if (tab === 'submit') {
-                // 进入实验提交标签页时自动加载镜像列表和历史脚本
+                // 进入创建任务标签页时自动加载镜像列表和历史脚本
                 loadHistoryScripts();
                 loadImages();
             } else if (tab === 'deployments') {
-                // 进入部署列表标签页时自动加载部署列表
+                // 进入运行中任务标签页时自动加载部署列表
                 loadDeployments();
             } else if (tab === 'records') {
                 loadRecords();
@@ -1759,7 +1819,7 @@
             }
         }
         
-        // 确保函数在全局作用域
+        // 确保函数在全局作用域（这些函数在定义时就会自动成为全局函数）
         window.copyToClipboard = copyToClipboard;
         window.stopDeployment = stopDeployment;
         window.deleteDeployment = deleteDeployment;
@@ -2147,30 +2207,47 @@
         }
 
         // 添加环境变量输入框
-        function addEnvVar(key = '', value = '', required = false, readonly = false) {
+        function addEnvVar(key = '', value = '', required = false, readonly = false, indentLevel = 0, insertAfter = null) {
             const container = document.getElementById('env-vars-container');
             const envVarDiv = document.createElement('div');
             envVarDiv.className = 'env-var-item';
-            envVarDiv.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-bottom: 10px;';
+            envVarDiv.style.cssText = 'margin-bottom: 10px;';
             envVarDiv.dataset.envKey = key; // 保存key，用于后续更新
+            envVarDiv.dataset.indentLevel = indentLevel; // 保存缩进级别
+            
+            // 计算缩进
+            const indentPx = indentLevel * 30;
             
             if (readonly) {
-                // 只读显示项（JOB_NAME 和 GPU_NUM）
+                // 只读显示项（JOB_NAME 和 GPU_NUM）- 不可多选和修改
                 envVarDiv.innerHTML = `
-                    <input type="text" class="form-input env-var-key" value="${key}" style="flex: 1; background: #f8f9fa; cursor: not-allowed;" readonly>
-                    <input type="text" class="form-input env-var-value" value="${value}" style="flex: 1; background: #f8f9fa; cursor: not-allowed;" readonly>
-                    <span style="color: #6c757d; font-size: 0.85em; padding: 0 10px;">自动同步</span>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-left: ${indentPx}px;">
+                        <input type="text" class="form-input env-var-key" value="${key}" style="flex: 1; background: #f8f9fa; cursor: not-allowed;" readonly>
+                        <input type="text" class="form-input env-var-value" value="${value}" style="flex: 1; background: #f8f9fa; cursor: not-allowed;" readonly>
+                        <span style="color: #6c757d; font-size: 0.85em; padding: 0 10px;">自动同步</span>
+                    </div>
                 `;
             } else {
                 // 可编辑项
                 const requiredMark = required ? ' <span style="color: #dc3545;">*</span>' : '';
                 envVarDiv.innerHTML = `
-                    <input type="text" class="form-input env-var-key" placeholder="变量名" value="${key}" style="flex: 1;" ${required ? 'required' : ''}>
-                    <input type="text" class="form-input env-var-value" placeholder="变量值" value="${value}" style="flex: 1;" ${required ? 'required' : ''}>
-                    <button type="button" class="btn btn-danger" onclick="removeEnvVar(this)" style="width: auto; padding: 10px 15px;" ${required ? 'disabled' : ''}>删除</button>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-left: ${indentPx}px;">
+                        <input type="text" class="form-input env-var-key" placeholder="变量名" value="${key}" style="flex: 1;" ${required ? 'required' : ''}>
+                        <input type="text" class="form-input env-var-value" placeholder="变量值" value="${value}" style="flex: 1;" ${required ? 'required' : ''}>
+                        <button type="button" class="btn btn-primary" onclick="duplicateEnvVar(this)" style="width: auto; padding: 10px 15px; background: #17a2b8; font-size: 0.9em;" title="复制此行以添加多个值">+ 添加值</button>
+                        <button type="button" class="btn btn-danger" onclick="removeEnvVar(this)" style="width: auto; padding: 10px 15px;" ${required ? 'disabled' : ''}>删除</button>
+                    </div>
                 `;
             }
-            container.appendChild(envVarDiv);
+            
+            // 如果指定了插入位置，插入到该元素之后；否则追加到容器末尾
+            if (insertAfter && insertAfter.nextSibling) {
+                container.insertBefore(envVarDiv, insertAfter.nextSibling);
+            } else if (insertAfter) {
+                container.appendChild(envVarDiv);
+            } else {
+                container.appendChild(envVarDiv);
+            }
         }
         
         // 更新只读环境变量的值
@@ -2187,6 +2264,33 @@
             });
         }
 
+        // 复制环境变量行（用于添加多个值）
+        function duplicateEnvVar(button) {
+            const item = button.closest('.env-var-item');
+            const keyInput = item.querySelector('.env-var-key');
+            const valueInput = item.querySelector('.env-var-value');
+            
+            if (keyInput && valueInput) {
+                const key = keyInput.value.trim();
+                const value = valueInput.value.trim();
+                
+                // 不允许复制只读的环境变量（JOB_NAME 和 GPU_NUM）
+                if (keyInput.readOnly) {
+                    alert('JOB_NAME 和 GPU_NUM 是自动同步的环境变量，不能复制');
+                    return;
+                }
+                
+                // 获取当前行的缩进级别
+                const currentIndent = parseInt(item.dataset.indentLevel || '0');
+                
+                // 如果当前行已经缩进（indentLevel > 0），则不再缩进；否则如果变量名不为空，新行应该缩进
+                const newIndent = currentIndent > 0 ? currentIndent : (key ? 1 : 0);
+                
+                // 创建新的一行，使用相同的变量名，但值为空，插入到当前行下方
+                addEnvVar(key, '', false, false, newIndent, item);
+            }
+        }
+        
         // 删除环境变量输入框
         function removeEnvVar(button) {
             const item = button.parentElement;
@@ -2207,19 +2311,229 @@
             const container = document.getElementById('env-vars-container');
             container.innerHTML = '';
             
-            // 添加只读环境变量（自动同步）
+            // 添加只读环境变量（自动同步）- 不可多选和修改
             const deploymentName = document.getElementById('deployment_name').value.trim() || '';
             const gpuNum = document.getElementById('gpu_num').value.trim() || '1';
-            addEnvVar('JOB_NAME', deploymentName, false, true);
-            addEnvVar('GPU_NUM', gpuNum, false, true);
+            addEnvVar('JOB_NAME', deploymentName, false, true, 0);
+            addEnvVar('GPU_NUM', gpuNum, false, true, 0);
             
             // 默认添加固定的环境变量
-            addEnvVar('OUTPUT', '/root/autodl-fs', true);
-            addEnvVar('DATASET_PATH', '/root/autodl-tmp/dataset', false);
-            addEnvVar('MODEL_PATH', '/root/autodl-tmp/model/rtdetrv2/rtdetrv2_r50vd_m_7x_coco_ema.pth', false);
-            addEnvVar('NUM_EPOCHES', '100', false);
+            addEnvVar('OUTPUT', '/root/autodl-fs', true, false, 0);
+            addEnvVar('DATASET_PATH', '/root/autodl-tmp/dataset', false, false, 0);
+            addEnvVar('MODEL_PATH', '/root/autodl-tmp/model/rtdetrv2/rtdetrv2_r50vd_m_7x_coco_ema.pth', false, false, 0);
+            addEnvVar('NUM_EPOCHES', '100', false, false, 0);
         }
 
+        // 文件上传相关
+        let uploadedFiles = [];
+        let selectedFiles = []; // 存储选中的文件 {filename, download_url, target_path}
+        
+        // 加载已上传的文件列表
+        async function loadUploadedFiles() {
+            try {
+                const response = await fetch('/api/autodl/uploaded-files', {
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                uploadedFiles = data.files || [];
+                renderUploadedFilesList();
+            } catch (error) {
+                console.error('加载文件列表失败:', error);
+                document.getElementById('uploaded-files-list').innerHTML = 
+                    `<div style="color: #dc3545; font-size: 0.9em;">加载失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 渲染已上传的文件列表
+        function renderUploadedFilesList() {
+            const container = document.getElementById('uploaded-files-list');
+            
+            if (uploadedFiles.length === 0) {
+                container.innerHTML = '<div style="color: #6c757d; font-size: 0.9em;">暂无已上传的文件</div>';
+                return;
+            }
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+            uploadedFiles.forEach(file => {
+                const sizeKB = (file.size / 1024).toFixed(2);
+                const isSelected = selectedFiles.some(f => f.filename === file.filename);
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border: 1px solid #dee2e6; border-radius: 6px; ${isSelected ? 'border-color: #28a745; background: #f0f8f0;' : ''}">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #495057; margin-bottom: 4px; word-break: break-all;">${file.filename}</div>
+                            <div style="font-size: 0.85em; color: #6c757d;">${sizeKB} KB</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                            <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                                   onchange="toggleFileSelection('${file.filename}', '${file.download_url}', this.checked)"
+                                   style="cursor: pointer;">
+                            <button type="button" onclick="deleteUploadedFile('${file.filename}')" 
+                                    style="padding: 4px 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                                删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // 切换文件选择状态
+        function toggleFileSelection(filename, downloadUrl, isSelected) {
+            if (isSelected) {
+                // 添加文件到选中列表
+                const file = uploadedFiles.find(f => f.filename === filename);
+                if (file) {
+                    selectedFiles.push({
+                        filename: filename,
+                        download_url: downloadUrl,
+                        target_path: `/root/${filename}` // 默认路径
+                    });
+                }
+            } else {
+                // 从选中列表移除
+                selectedFiles = selectedFiles.filter(f => f.filename !== filename);
+            }
+            renderSelectedFilesList();
+            renderUploadedFilesList();
+        }
+        
+        // 渲染选中的文件列表
+        function renderSelectedFilesList() {
+            const container = document.getElementById('selected-files-list');
+            
+            if (selectedFiles.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '<div style="border: 1px solid #28a745; border-radius: 6px; padding: 10px; background: #f0f8f0;">';
+            html += '<div style="font-weight: 600; color: #28a745; margin-bottom: 8px;">已选中的文件（将在任务启动时下载）:</div>';
+            html += '<div style="display: flex; flex-direction: column; gap: 6px;">';
+            
+            selectedFiles.forEach((file, index) => {
+                html += `
+                    <div style="display: flex; gap: 8px; align-items: center; padding: 6px; background: white; border-radius: 4px;">
+                        <span style="flex: 1; font-size: 0.9em; color: #495057;">${file.filename}</span>
+                        <input type="text" value="${file.target_path}" 
+                               placeholder="目标路径" 
+                               onchange="updateFileTargetPath(${index}, this.value)"
+                               style="flex: 1; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.85em;">
+                        <button type="button" onclick="removeSelectedFile(${index})" 
+                                style="padding: 4px 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                            移除
+                        </button>
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+            container.innerHTML = html;
+        }
+        
+        // 更新文件目标路径
+        function updateFileTargetPath(index, path) {
+            if (selectedFiles[index]) {
+                selectedFiles[index].target_path = path || `/root/${selectedFiles[index].filename}`;
+            }
+        }
+        
+        // 移除选中的文件
+        function removeSelectedFile(index) {
+            selectedFiles.splice(index, 1);
+            renderSelectedFilesList();
+            renderUploadedFilesList();
+        }
+        
+        // 获取选中的文件列表
+        function getSelectedFiles() {
+            return selectedFiles;
+        }
+        
+        // 处理文件选择
+        async function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            
+            for (const file of files) {
+                await uploadFile(file);
+            }
+            
+            // 清空文件选择
+            event.target.value = '';
+        }
+        
+        // 上传文件
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/autodl/upload-file', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // 上传成功后，自动选中该文件
+                selectedFiles.push({
+                    filename: data.filename,
+                    download_url: data.download_url,
+                    target_path: data.target_path || `/root/${data.filename}`
+                });
+                
+                // 重新加载文件列表
+                await loadUploadedFiles();
+                renderSelectedFilesList();
+                
+                alert(`文件 "${data.original_filename}" 上传成功！`);
+            } catch (error) {
+                console.error('上传文件失败:', error);
+                alert('上传文件失败: ' + error.message);
+            }
+        }
+        
+        // 删除上传的文件
+        async function deleteUploadedFile(filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/autodl/uploaded-files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // 从选中列表移除
+                selectedFiles = selectedFiles.filter(f => f.filename !== filename);
+                
+                // 重新加载文件列表
+                await loadUploadedFiles();
+                renderSelectedFilesList();
+            } catch (error) {
+                console.error('删除文件失败:', error);
+                alert('删除文件失败: ' + error.message);
+            }
+        }
+        
         // Monaco Editor 实例
         let monacoEditor = null;
         let fullscreenMonacoEditor = null;
@@ -2437,9 +2751,272 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
             }
         }
 
-        // 创建部署
+        // 生成环境变量组合
+        function generateEnvVarCombinations() {
+            const envVarMap = {};
+            
+            // 收集所有环境变量及其可能的值
+            // 同一个变量名的多个值会被合并到一个数组中
+            document.querySelectorAll('.env-var-item').forEach(item => {
+                const keyInput = item.querySelector('.env-var-key');
+                const valueInput = item.querySelector('.env-var-value');
+                if (keyInput && valueInput) {
+                    const key = keyInput.value.trim();
+                    const value = valueInput.value.trim();
+                    // 跳过只读的环境变量（JOB_NAME 和 GPU_NUM）
+                    if (key && !keyInput.readOnly && value) {
+                        // 如果该变量名已存在，将值添加到数组中
+                        if (envVarMap[key]) {
+                            envVarMap[key].push(value);
+                        } else {
+                            envVarMap[key] = [value];
+                        }
+                    }
+                }
+            });
+            
+            // 添加自动同步的环境变量（固定值）
+            const deploymentName = document.getElementById('deployment_name').value.trim() || '';
+            const gpuNumStr = document.getElementById('gpu_num').value.trim() || '1';
+            envVarMap['JOB_NAME'] = [deploymentName];
+            envVarMap['GPU_NUM'] = [gpuNumStr];
+            
+            // 生成所有组合
+            const keys = Object.keys(envVarMap);
+            if (keys.length === 0) {
+                return {
+                    combinations: [{}],
+                    totalCount: 1,
+                    envVarMap: {}
+                };
+            }
+            
+            // 计算总组合数
+            let totalCombinations = 1;
+            keys.forEach(key => {
+                totalCombinations *= envVarMap[key].length;
+            });
+            
+            // 生成组合
+            const combinations = [];
+            for (let i = 0; i < totalCombinations; i++) {
+                const combination = {};
+                let temp = i;
+                keys.forEach(key => {
+                    const values = envVarMap[key];
+                    const index = temp % values.length;
+                    combination[key] = values[index];
+                    temp = Math.floor(temp / values.length);
+                });
+                combinations.push(combination);
+            }
+            
+            return {
+                combinations: combinations,
+                totalCount: totalCombinations,
+                envVarMap: envVarMap
+            };
+        }
+        
+        // 预览执行命令
+        async function previewCommand() {
+            try {
+                // 获取运行脚本
+                const runScriptType = document.getElementById('run_script_type').value;
+                const runScriptContent = monacoEditor ? monacoEditor.getValue().trim() : '';
+                
+                // 获取历史脚本（build.sh）
+                const historyScript = document.getElementById('history_script').value;
+                
+                // 验证必填项
+                if (!runScriptContent) {
+                    alert('请先输入运行脚本代码');
+                    return;
+                }
+                
+                // 生成环境变量组合
+                const envCombinations = generateEnvVarCombinations();
+                const totalTasks = envCombinations.totalCount;
+                const envVarMap = envCombinations.envVarMap; // 获取环境变量映射，用于判断哪些变量有多个值
+                
+                // 获取基础名称
+                const baseName = document.getElementById('deployment_name').value.trim() || '';
+                
+                // 第二步：保存run脚本并获取下载URL
+                const runScriptResponse = await fetch('/api/autodl/save-run-script', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        script_content: runScriptContent,
+                        script_type: runScriptType
+                    })
+                });
+                
+                const runScriptData = await runScriptResponse.json();
+                if (!runScriptResponse.ok) {
+                    alert('生成预览失败：' + (runScriptData.error || '未知错误'));
+                    return;
+                }
+                
+                const runScriptUrl = runScriptData.download_url;
+                const runScriptFilename = runScriptData.filename; // run.sh 或 run.py
+                
+                // 第三步：如果有历史脚本，获取其下载URL
+                let buildScriptUrl = null;
+                if (historyScript) {
+                    const buildScriptResponse = await fetch(`/api/scripts/${encodeURIComponent(historyScript)}/download`, {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    const buildScriptData = await buildScriptResponse.json();
+                    if (buildScriptResponse.ok && buildScriptData.download_url) {
+                        buildScriptUrl = buildScriptData.download_url;
+                    }
+                }
+                
+                // 第四步：获取选中的上传文件
+                const selectedFiles = getSelectedFiles();
+                
+                // 获取完整的基础URL（用于构建完整的下载URL）
+                const baseUrl = window.location.origin;
+                
+                // 生成所有任务的预览
+                let allTasksPreview = [];
+                
+                // 为每个任务生成预览
+                for (let i = 0; i < totalTasks; i++) {
+                    const taskEnvVars = envCombinations.combinations[i];
+                    
+                    // 生成任务名称（如果是批量提交，添加后缀）
+                    let taskName = baseName;
+                    if (totalTasks > 1) {
+                        // 根据环境变量值生成后缀（只包含有多个值的环境变量）
+                        const suffixParts = [];
+                        Object.keys(taskEnvVars).forEach(key => {
+                            if (key !== 'JOB_NAME' && key !== 'GPU_NUM' && key !== 'OUTPUT') {
+                                // 只处理有多个值的环境变量
+                                if (envVarMap[key] && envVarMap[key].length > 1) {
+                                    const value = taskEnvVars[key];
+                                    // 简化值作为后缀（/ 替换为 .，其他特殊字符替换为 _）
+                                    const cleanValue = value.toString().replace(/\//g, '.').replace(/[^a-zA-Z0-9.]/g, '_');
+                                    suffixParts.push(`${key}_${cleanValue}`);
+                                }
+                            }
+                        });
+                        if (suffixParts.length > 0) {
+                            taskName = `${baseName}_${suffixParts.join('_')}`;
+                        } else {
+                            taskName = `${baseName}_${i + 1}`;
+                        }
+                    }
+                    
+                    // 为当前任务保存环境变量脚本并获取URL
+                    const taskEnvScriptResponse = await fetch('/api/autodl/save-env-script', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            env_vars: taskEnvVars
+                        })
+                    });
+                    
+                    const taskEnvScriptData = await taskEnvScriptResponse.json();
+                    if (!taskEnvScriptResponse.ok) {
+                        continue; // 跳过失败的任务
+                    }
+                    
+                    const taskEnvScriptUrl = taskEnvScriptData.download_url;
+                    
+                    // 构建当前任务的启动命令（格式化显示）
+                    let cmdParts = [];
+                    
+                    // 添加任务名称标题
+                    if (totalTasks > 1) {
+                        cmdParts.push(`# ===== 任务 ${i + 1}/${totalTasks}: ${taskName} =====`);
+                        cmdParts.push('');
+                    }
+                    
+                    // 先下载所有选中的文件
+                    if (selectedFiles.length > 0) {
+                        cmdParts.push('# 下载上传的文件');
+                        for (const file of selectedFiles) {
+                            const targetPath = file.target_path || `/root/${file.filename}`;
+                            // 确保使用完整的URL
+                            let fileUrl = file.download_url;
+                            if (fileUrl && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+                                // 如果是相对路径，转换为完整URL
+                                fileUrl = baseUrl + (fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl);
+                            }
+                            cmdParts.push(`wget ${fileUrl} -O ${targetPath}`);
+                        }
+                        cmdParts.push('');
+                    }
+                    
+                    if (buildScriptUrl) {
+                        cmdParts.push('# 下载构建脚本');
+                        cmdParts.push(`wget ${buildScriptUrl} -O build.sh`);
+                        cmdParts.push('');
+                    }
+                    
+                    cmdParts.push('# 下载环境变量脚本');
+                    cmdParts.push(`wget ${taskEnvScriptUrl} -O env.sh`);
+                    cmdParts.push('');
+                    cmdParts.push('# 加载环境变量');
+                    cmdParts.push('source env.sh');
+                    cmdParts.push('');
+                    cmdParts.push('# 下载运行脚本');
+                    cmdParts.push(`wget ${runScriptUrl} -O ${runScriptFilename}`);
+                    cmdParts.push('');
+                    cmdParts.push('# 执行运行脚本');
+                    if (runScriptType === 'python') {
+                        cmdParts.push(`python3 ${runScriptFilename}`);
+                    } else {
+                        cmdParts.push(`bash ${runScriptFilename}`);
+                    }
+                    
+                    // 添加到所有任务预览中
+                    allTasksPreview.push(cmdParts.join('\n'));
+                    
+                    // 如果不是最后一个任务，添加分隔符
+                    if (i < totalTasks - 1) {
+                        allTasksPreview.push('');
+                        allTasksPreview.push('# ' + '='.repeat(60));
+                        allTasksPreview.push('');
+                    }
+                }
+                
+                // 生成格式化的命令（用于显示）
+                const formattedCmd = allTasksPreview.join('\n');
+                
+                // 显示弹窗
+                document.getElementById('command-preview-text').textContent = formattedCmd;
+                
+                // 显示任务数量
+                const taskCountElement = document.getElementById('preview-task-count');
+                if (totalTasks > 1) {
+                    taskCountElement.textContent = `将同时提交 ${totalTasks} 个任务`;
+                    taskCountElement.style.display = 'block';
+                } else {
+                    taskCountElement.textContent = '';
+                    taskCountElement.style.display = 'none';
+                }
+                
+                document.getElementById('command-preview-modal').style.display = 'flex';
+            } catch (error) {
+                console.error('预览命令失败:', error);
+                alert('预览命令失败: ' + error.message);
+            }
+        }
+        
+        // 关闭预览弹窗
+        function closeCommandPreview() {
+            document.getElementById('command-preview-modal').style.display = 'none';
+        }
+        
+        // 创建部署（支持批量提交）
         async function createDeployment() {
-            const name = document.getElementById('deployment_name').value.trim();
+            const baseName = document.getElementById('deployment_name').value.trim();
             const deploymentType = document.getElementById('deployment_type').value;
             const imageSelect = document.getElementById('deployment_image');
             const imageOption = imageSelect.options[imageSelect.selectedIndex];
@@ -2452,46 +3029,18 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
             const gpuNum = parseInt(document.getElementById('gpu_num').value) || 1;
             const selectedGPUs = Array.from(document.querySelectorAll('.gpu-type-checkbox:checked')).map(cb => cb.value);
             
-            // 获取环境变量（包括自动同步的JOB_NAME和GPU_NUM）
-            const envVars = {};
-            let hasOutput = false;
-            
-            // 首先添加自动同步的环境变量
-            const deploymentName = document.getElementById('deployment_name').value.trim() || '';
-            const gpuNumStr = document.getElementById('gpu_num').value.trim() || '1';
-            envVars['JOB_NAME'] = deploymentName;
-            envVars['GPU_NUM'] = gpuNumStr;
-            
-            // 然后添加其他环境变量（排除JOB_NAME和GPU_NUM，避免重复）
-            document.querySelectorAll('.env-var-item').forEach(item => {
-                const keyInput = item.querySelector('.env-var-key');
-                const valueInput = item.querySelector('.env-var-value');
-                if (keyInput && valueInput) {
-                    const key = keyInput.value.trim();
-                    const value = valueInput.value.trim();
-                    // 跳过JOB_NAME和GPU_NUM（它们已经自动添加了）
-                    if (key && key !== 'JOB_NAME' && key !== 'GPU_NUM') {
-                        envVars[key] = value;
-                        if (key === 'OUTPUT') {
-                            hasOutput = true;
-                        }
-                    }
-                }
-            });
-            
-            // 调试信息
-            console.log('Collected environment variables:', envVars);
-            console.log('Has OUTPUT:', hasOutput);
-            
             // 获取运行脚本
             const runScriptType = document.getElementById('run_script_type').value;
             const runScriptContent = monacoEditor ? monacoEditor.getValue().trim() : '';
             
             // 获取历史脚本（build.sh）
             const historyScript = document.getElementById('history_script').value;
+            
+            // 获取选中的上传文件
+            const selectedFiles = getSelectedFiles();
 
             // 验证必填项
-            if (!name) {
+            if (!baseName) {
                 alert('请输入部署名称');
                 return;
             }
@@ -2506,36 +3055,39 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                 return;
             }
 
-            if (!hasOutput) {
-                alert('必须配置 OUTPUT 环境变量');
-                return;
-            }
-
             if (!runScriptContent) {
                 alert('请输入运行脚本代码');
                 return;
             }
-
-            try {
-                // 第一步：保存环境变量脚本（env.sh）并获取下载URL
-                const envScriptResponse = await fetch('/api/autodl/save-env-script', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                        env_vars: envVars
-                    })
-                });
-
-                const envScriptData = await envScriptResponse.json();
-                if (!envScriptResponse.ok) {
-                    alert('保存环境变量脚本失败：' + (envScriptData.error || '未知错误'));
+            
+            // 生成环境变量组合
+            const envCombinations = generateEnvVarCombinations();
+            const totalTasks = envCombinations.totalCount;
+            const envVarMap = envCombinations.envVarMap; // 获取环境变量映射，用于判断哪些变量有多个值
+            
+            // 检查是否有 OUTPUT 环境变量
+            let hasOutput = false;
+            envCombinations.combinations.forEach(envVars => {
+                if (envVars['OUTPUT']) {
+                    hasOutput = true;
+                }
+            });
+            
+            if (!hasOutput) {
+                alert('必须配置 OUTPUT 环境变量');
+                return;
+            }
+            
+            // 确认批量提交
+            if (totalTasks > 1) {
+                const confirmed = confirm(`将同时提交 ${totalTasks} 个任务，是否继续？`);
+                if (!confirmed) {
                     return;
                 }
+            }
 
-                const envScriptUrl = envScriptData.download_url;
-
-                // 第二步：保存run脚本并获取下载URL
+            try {
+                // 第一步：保存run脚本并获取下载URL（所有任务共用）
                 const runScriptResponse = await fetch('/api/autodl/save-run-script', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -2555,7 +3107,7 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                 const runScriptUrl = runScriptData.download_url;
                 const runScriptFilename = runScriptData.filename; // run.sh 或 run.py
 
-                // 第三步：如果有历史脚本，获取其下载URL
+                // 第二步：如果有历史脚本，获取其下载URL（所有任务共用）
                 let buildScriptUrl = null;
                 if (historyScript) {
                     const buildScriptResponse = await fetch(`/api/scripts/${encodeURIComponent(historyScript)}/download`, {
@@ -2570,63 +3122,136 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                         return;
                     }
                 }
-
-                // 第四步：构建启动命令
-                // 命令顺序：下载 build.sh -> 下载 env.sh -> source env.sh -> 下载 run.sh/run.py -> 执行 run.sh/run.py
-                let cmd = '';
-                if (buildScriptUrl) {
-                    cmd += `wget ${buildScriptUrl} -O build.sh && `;
-                }
-                cmd += `wget ${envScriptUrl} -O env.sh && `;
-                cmd += `source env.sh && `;
-                cmd += `wget ${runScriptUrl} -O ${runScriptFilename} && `;
-                if (runScriptType === 'python') {
-                    cmd += `python3 ${runScriptFilename}`;
-                } else {
-                    cmd += `bash ${runScriptFilename}`;
-                }
-
-                // 调试：打印环境变量和启动命令
-                console.log('=== Deployment Creation Debug ===');
-                console.log('Environment variables:', envVars);
-                console.log('Environment variables JSON:', JSON.stringify(envVars));
-                console.log('Has OUTPUT:', hasOutput);
-                console.log('OUTPUT value:', envVars.OUTPUT);
-                console.log('Final command:', cmd);
                 
-                // 第五步：创建部署（不再传递 env_vars，环境变量通过 env.sh 脚本传递）
-                const response = await fetch('/api/autodl/create-deployment', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                        name: name,
-                        image_uuid: imageUuid,
-                        deployment_type: deploymentType,
-                        dc_list: selectedDCs,
-                        gpu_num: gpuNum,
-                        gpu_name_set: selectedGPUs,
-                        // env_vars 已移除，环境变量通过 env.sh 脚本传递
-                        cmd: cmd,
-                        // 传递运行脚本信息用于保存配置
-                        run_script_type: runScriptType,
-                        run_script_content: runScriptContent,
-                        history_script: historyScript || null,
-                        env_vars: envVars  // 仅用于保存配置，不传递给 API
-                    })
-                });
+                // 第三步：批量创建部署
+                let successCount = 0;
+                let failCount = 0;
+                const errors = [];
+                
+                for (let i = 0; i < totalTasks; i++) {
+                    const envVars = envCombinations.combinations[i];
+                    
+                    // 生成部署名称（如果是批量提交，添加后缀）
+                    let deploymentName = baseName;
+                    if (totalTasks > 1) {
+                        // 根据环境变量值生成后缀（只包含有多个值的环境变量）
+                        const suffixParts = [];
+                        Object.keys(envVars).forEach(key => {
+                            if (key !== 'JOB_NAME' && key !== 'GPU_NUM' && key !== 'OUTPUT') {
+                                // 只处理有多个值的环境变量
+                                if (envVarMap[key] && envVarMap[key].length > 1) {
+                                    const value = envVars[key];
+                                    // 简化值作为后缀（/ 替换为 .，其他特殊字符替换为 _）
+                                    const cleanValue = value.toString().replace(/\//g, '.').replace(/[^a-zA-Z0-9.]/g, '_');
+                                    suffixParts.push(`${key}_${cleanValue}`);
+                                }
+                            }
+                        });
+                        if (suffixParts.length > 0) {
+                            deploymentName = `${baseName}_${suffixParts.join('_')}`;
+                        } else {
+                            deploymentName = `${baseName}_${i + 1}`;
+                        }
+                    }
+                    
+                    try {
+                        // 保存环境变量脚本（env.sh）并获取下载URL
+                        const envScriptResponse = await fetch('/api/autodl/save-env-script', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                env_vars: envVars
+                            })
+                        });
 
-                const data = await response.json();
-                if (response.ok) {
-                    alert(data.message || '部署创建成功！');
-                    // 切换到部署列表并刷新
-                    const deploymentsTab = document.querySelector('.nav-tab[data-tab="deployments"]');
-                    switchTab('deployments', deploymentsTab);
+                        const envScriptData = await envScriptResponse.json();
+                        if (!envScriptResponse.ok) {
+                            throw new Error('保存环境变量脚本失败：' + (envScriptData.error || '未知错误'));
+                        }
+
+                        const envScriptUrl = envScriptData.download_url;
+                        
+                        // 构建启动命令
+                        let cmd = '';
+                        
+                        // 先下载所有选中的文件
+                        for (const file of selectedFiles) {
+                            const targetPath = file.target_path || `/root/${file.filename}`;
+                            cmd += `wget ${file.download_url} -O ${targetPath} && `;
+                        }
+                        
+                        if (buildScriptUrl) {
+                            cmd += `wget ${buildScriptUrl} -O build.sh && `;
+                        }
+                        cmd += `wget ${envScriptUrl} -O env.sh && `;
+                        cmd += `source env.sh && `;
+                        cmd += `wget ${runScriptUrl} -O ${runScriptFilename} && `;
+                        if (runScriptType === 'python') {
+                            cmd += `python3 ${runScriptFilename}`;
+                        } else {
+                            cmd += `bash ${runScriptFilename}`;
+                        }
+                        
+                        // 创建部署
+                        const response = await fetch('/api/autodl/create-deployment', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                name: deploymentName,
+                                image_uuid: imageUuid,
+                                deployment_type: deploymentType,
+                                dc_list: selectedDCs,
+                                gpu_num: gpuNum,
+                                gpu_name_set: selectedGPUs,
+                                cmd: cmd,
+                                run_script_type: runScriptType,
+                                run_script_content: runScriptContent,
+                                history_script: historyScript || null,
+                                env_vars: envVars  // 仅用于保存配置
+                            })
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            successCount++;
+                            console.log(`✓ 任务 ${i + 1}/${totalTasks} 创建成功: ${deploymentName}`);
+                        } else {
+                            failCount++;
+                            const errorMsg = `任务 ${i + 1}/${totalTasks} (${deploymentName}): ${data.error || '未知错误'}`;
+                            errors.push(errorMsg);
+                            console.error(`✗ ${errorMsg}`);
+                        }
+                    } catch (error) {
+                        failCount++;
+                        const errorMsg = `任务 ${i + 1}/${totalTasks} (${deploymentName}): ${error.message}`;
+                        errors.push(errorMsg);
+                        console.error(`✗ ${errorMsg}`);
+                    }
+                }
+                
+                // 显示结果
+                if (failCount === 0) {
+                    alert(`✅ 所有 ${totalTasks} 个任务创建成功！`);
                 } else {
-                    alert('创建部署失败：' + (data.error || '未知错误'));
+                    let message = `⚠️ 完成情况：成功 ${successCount} 个，失败 ${failCount} 个\n\n`;
+                    if (errors.length > 0) {
+                        message += '失败详情：\n' + errors.slice(0, 5).join('\n');
+                        if (errors.length > 5) {
+                            message += `\n... 还有 ${errors.length - 5} 个错误`;
+                        }
+                    }
+                    alert(message);
+                }
+                
+                // 切换到部署列表并刷新
+                const deploymentsTab = document.querySelector('.nav-tab[data-tab="deployments"]');
+                if (deploymentsTab) {
+                    switchTab('deployments', deploymentsTab);
                 }
             } catch (error) {
-                alert('创建部署失败：' + error.message);
+                alert('批量创建部署失败：' + error.message);
             }
         }
 
@@ -2820,7 +3445,7 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                 return keyInput && keyInput.value.trim() === 'OUTPUT';
             });
             if (!hasOutput) {
-                addEnvVar('OUTPUT', '/root/autodl-fs', true);
+                addEnvVar('OUTPUT', '/root/autodl-fs', true, false, 0);
             }
             
             // 运行脚本类型和内容
@@ -2902,7 +3527,6 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                                 </button>
                                 <button class="btn-link btn-delete-link" onclick="deleteDeploymentConfig('${escapeHtml(config.full_filename)}', this)" title="删除配置">
                                     <span>🗑️</span>
-                                    <span>删除</span>
                                 </button>
                             </div>
                         `;
@@ -2978,6 +3602,14 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
             }
         }
 
+        // 确保所有关键函数在全局作用域可用
+        window.previewCommand = previewCommand;
+        window.createDeployment = createDeployment;
+        window.addEnvVar = addEnvVar;
+        window.switchTab = switchTab;
+        window.loadUploadedFiles = loadUploadedFiles;
+        window.closeCommandPreview = closeCommandPreview;
+        
         // 页面加载时初始化
         initPage().then(async () => {
             // 初始化数据中心复选框
@@ -3499,7 +4131,7 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
             }
         }
 
-        // ==================== 提交记录功能 ====================
+        // ==================== 任务记录功能 ====================
         let currentRecordsPage = 1;
         const recordsPerPage = 10;
         let currentSaveRecordFilename = null;
@@ -3534,7 +4166,7 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                 const pagination = data.pagination;
                 
                 if (data.records.length === 0) {
-                    recordsList.innerHTML = '<div class="scripts-list-empty">暂无提交记录</div>';
+                    recordsList.innerHTML = '<div class="scripts-list-empty">暂无任务记录</div>';
                 } else {
                     recordsList.innerHTML = data.records.map(record => {
                         const recordData = record.record;
@@ -3595,7 +4227,7 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                 }
                 
                 loadConfigToForm(data.record);
-                // 切换到实验提交标签页
+                // 切换到创建任务标签页
                 const submitTab = document.querySelector('.nav-tab[data-tab="submit"]');
                 if (submitTab) {
                     switchTab('submit', submitTab);
@@ -3615,7 +4247,7 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
         }
 
         async function deleteRecord(recordFilename, button) {
-            if (!confirm('确定要删除这个提交记录吗？')) {
+            if (!confirm('确定要删除这个任务记录吗？')) {
                 return;
             }
             

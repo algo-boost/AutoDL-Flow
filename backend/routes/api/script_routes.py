@@ -4,7 +4,7 @@ AutoDL Flow - 脚本相关 API 路由
 from flask import request, jsonify, session, send_file
 from backend.auth.decorators import login_required
 from backend.utils.storage import get_user_storage_dir, get_accessible_dirs
-from backend.config import SCRIPTS_STORAGE_DIR, TEMP_SCRIPTS_DIR
+from backend.config import SCRIPTS_STORAGE_DIR, TEMP_SCRIPTS_DIR, UPLOADED_FILES_DIR
 from backend.services.script_generator import ScriptGenerator
 from backend.services.config_service import ConfigService
 from backend.utils.token import generate_download_token, verify_download_token
@@ -312,35 +312,53 @@ def register_routes(bp):
             
             file_path = None
             
-            # 先检查临时脚本目录（运行脚本）
-            if '/' in filename or '\\' in filename:  # 如果包含路径分隔符，说明是临时文件
-                potential_path = TEMP_SCRIPTS_DIR / filename
-                if potential_path.exists() and potential_path.is_file():
-                    file_path = potential_path
+            # 先检查上传的文件目录（如果包含路径分隔符，可能是上传的文件）
+            if '/' in filename or '\\' in filename:
+                # 检查是否是上传的文件（格式：username/filename）
+                parts = filename.replace('\\', '/').split('/')
+                if len(parts) == 2:
+                    potential_path = UPLOADED_FILES_DIR / parts[0] / parts[1]
+                    if potential_path.exists() and potential_path.is_file():
+                        file_path = potential_path
+                # 如果不是上传文件，检查临时脚本目录
+                if not file_path:
+                    potential_path = TEMP_SCRIPTS_DIR / filename
+                    if potential_path.exists() and potential_path.is_file():
+                        file_path = potential_path
             else:
-                # 查找文件（在所有用户目录中查找）
-                # 先检查根目录（admin 的旧文件）
-                potential_path = SCRIPTS_STORAGE_DIR / filename
-                if potential_path.exists() and potential_path.is_file():
-                    file_path = potential_path
-                else:
-                    # 检查所有用户目录
-                    if SCRIPTS_STORAGE_DIR.exists():
-                        for item in SCRIPTS_STORAGE_DIR.iterdir():
-                            if item.is_dir():
-                                potential_path = item / filename
-                                if potential_path.exists() and potential_path.is_file():
-                                    file_path = potential_path
-                                    break
-                    # 如果还没找到，检查临时目录
-                    if not file_path:
-                        if TEMP_SCRIPTS_DIR.exists():
-                            for item in TEMP_SCRIPTS_DIR.iterdir():
+                # 先检查上传的文件目录（所有用户目录）
+                if UPLOADED_FILES_DIR.exists():
+                    for item in UPLOADED_FILES_DIR.iterdir():
+                        if item.is_dir():
+                            potential_path = item / filename
+                            if potential_path.exists() and potential_path.is_file():
+                                file_path = potential_path
+                                break
+                
+                # 如果还没找到，检查脚本存储目录
+                if not file_path:
+                    # 先检查根目录（admin 的旧文件）
+                    potential_path = SCRIPTS_STORAGE_DIR / filename
+                    if potential_path.exists() and potential_path.is_file():
+                        file_path = potential_path
+                    else:
+                        # 检查所有用户目录
+                        if SCRIPTS_STORAGE_DIR.exists():
+                            for item in SCRIPTS_STORAGE_DIR.iterdir():
                                 if item.is_dir():
                                     potential_path = item / filename
                                     if potential_path.exists() and potential_path.is_file():
                                         file_path = potential_path
                                         break
+                        # 如果还没找到，检查临时目录
+                        if not file_path:
+                            if TEMP_SCRIPTS_DIR.exists():
+                                for item in TEMP_SCRIPTS_DIR.iterdir():
+                                    if item.is_dir():
+                                        potential_path = item / filename
+                                        if potential_path.exists() and potential_path.is_file():
+                                            file_path = potential_path
+                                            break
             
             if not file_path or not file_path.exists():
                 print(f"File not found when serving: {filename}")

@@ -48,6 +48,10 @@ DEPLOYMENT_CONFIGS_DIR.mkdir(parents=True, exist_ok=True)
 DEPLOYMENT_RECORDS_DIR = DATA_DIR / 'deployment_records'
 DEPLOYMENT_RECORDS_DIR.mkdir(parents=True, exist_ok=True)
 
+# 文件上传存储目录
+UPLOADED_FILES_DIR = DATA_DIR / 'uploaded_files'
+UPLOADED_FILES_DIR.mkdir(parents=True, exist_ok=True)
+
 # 百度网盘脚本目录
 BAIDU_NETDISK_SCRIPTS_DIR = '/apps/autodl/scripts'
 
