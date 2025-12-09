@@ -13,12 +13,15 @@ from backend.utils.storage import (
     cleanup_old_temp_scripts
 )
 from backend.utils.token import generate_download_token
+from backend.utils.errors import APIError, ValidationError, NotFoundError, UnauthorizedError, log_error
+from backend.auth.utils import is_admin
 from datetime import datetime
 from pathlib import Path
 import json
 import os
 import time
 import random
+import re
 from urllib.parse import unquote
 
 
@@ -149,6 +152,25 @@ def register_routes(bp):
             
             client = AutoDLElasticDeployment(token)
             deployments = client.get_deployments()
+
+            # 非 admin 仅显示自己提交的任务（如果返回包含用户名字段则尝试过滤）
+            if not is_admin(username) and isinstance(deployments, list):
+                filtered = []
+                for item in deployments:
+                    owner = (
+                        item.get('username')
+                        or item.get('user')
+                        or item.get('user_name')
+                        or item.get('owner')
+                        or item.get('creator')
+                    )
+                    if owner:
+                        if owner == username:
+                            filtered.append(item)
+                    else:
+                        # 如果没有 owner 字段，则保留（避免误删）
+                        filtered.append(item)
+                deployments = filtered
             
             return jsonify({'deployments': deployments})
         except Exception as e:
@@ -202,6 +224,48 @@ def register_routes(bp):
                 return jsonify({'error': '删除部署失败'}), 500
         except Exception as e:
             print(f"Error deleting deployment: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/autodl/deployments/batch-delete', methods=['POST'])
+    @login_required
+    def batch_delete_autodl_deployments():
+        """批量删除 AutoDL 部署（用于已停止任务多选删除）"""
+        try:
+            username = session.get('username', 'admin')
+            data = request.json or {}
+            deployment_uuids = data.get('deployment_uuids', [])
+
+            if not isinstance(deployment_uuids, list) or not deployment_uuids:
+                return jsonify({'error': 'deployment_uuids 参数必须为非空列表'}), 400
+            
+            token = load_user_autodl_token(username)
+            if not token:
+                return jsonify({'error': 'API Token 未设置，请先配置 Token'}), 400
+            
+            client = AutoDLElasticDeployment(token)
+            results = []
+            success_count = 0
+
+            for uuid in deployment_uuids:
+                try:
+                    ok = client.delete_deployment(uuid)
+                    results.append({'deployment_uuid': uuid, 'success': bool(ok)})
+                    if ok:
+                        success_count += 1
+                except Exception as inner_e:
+                    results.append({'deployment_uuid': uuid, 'success': False, 'error': str(inner_e)})
+                    continue
+            
+            return jsonify({
+                'success': success_count == len(deployment_uuids),
+                'deleted': success_count,
+                'total': len(deployment_uuids),
+                'results': results
+            })
+        except Exception as e:
+            print(f"Error batch deleting deployments: {e}")
             import traceback
             traceback.print_exc()
             return jsonify({'error': str(e)}), 500
@@ -665,6 +729,21 @@ def register_routes(bp):
             gpu_names = [gpu.replace('-', ' ') for gpu in gpu_name_set] if gpu_name_set else None
             
             try:
+                # 清理命令：移除多余的空白字符，确保命令正确
+                if cmd:
+                    # 移除命令开头和结尾的空白
+                    cmd = cmd.strip()
+                    # 移除多余的 && 连接符（如 " && && "）
+                    cmd = re.sub(r'\s*&&\s*&&\s*', ' && ', cmd)
+                    # 移除命令开头的 && 
+                    cmd = re.sub(r'^\s*&&\s*', '', cmd)
+                    # 移除命令结尾的 &&
+                    cmd = re.sub(r'\s*&&\s*$', '', cmd)
+                
+                # 记录命令（用于调试）
+                log_error(f"创建部署命令: {cmd[:200]}..." if len(cmd) > 200 else f"创建部署命令: {cmd}", 
+                         username=username, deployment_name=name)
+                
                 # 调用 create_deployment 方法
                 deployment_uuid = client.create_deployment(
                     name=name,
@@ -1142,18 +1221,22 @@ def register_routes(bp):
             username = session.get('username', 'admin')
             
             if 'file' not in request.files:
-                return jsonify({'error': '没有文件被上传'}), 400
+                raise ValidationError('没有文件被上传')
             
             file = request.files['file']
             if file.filename == '':
-                return jsonify({'error': '文件名为空'}), 400
+                raise ValidationError('文件名为空')
             
             # 获取目标路径（可选）
             target_path = request.form.get('target_path', '').strip()
             
             # 创建用户目录
             user_upload_dir = UPLOADED_FILES_DIR / username
-            user_upload_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                user_upload_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                log_error(f"创建用户上传目录失败: {user_upload_dir}", exception=e, username=username)
+                raise APIError('创建上传目录失败', status_code=500, error_code='DIR_CREATE_FAILED')
             
             # 保存文件
             filename = file.filename
@@ -1166,11 +1249,19 @@ def register_routes(bp):
                 file_path = user_upload_dir / f"{name_part}_{counter}{ext_part}"
                 counter += 1
             
-            file.save(str(file_path))
+            try:
+                file.save(str(file_path))
+            except Exception as e:
+                log_error(f"保存文件失败: {file_path}", exception=e, username=username, filename=filename)
+                raise APIError('保存文件失败', status_code=500, error_code='FILE_SAVE_FAILED')
             
             # 生成下载 token
-            relative_path = file_path.relative_to(UPLOADED_FILES_DIR)
-            token = generate_download_token(str(relative_path))
+            try:
+                relative_path = file_path.relative_to(UPLOADED_FILES_DIR)
+                token = generate_download_token(str(relative_path))
+            except Exception as e:
+                log_error(f"生成下载token失败", exception=e, username=username, filename=filename)
+                raise APIError('生成下载链接失败', status_code=500, error_code='TOKEN_GENERATE_FAILED')
             
             # 从请求中获取正确的 host 和 scheme（用于生成完整URL）
             scheme = request.headers.get('X-Forwarded-Proto', 'http')
@@ -1183,20 +1274,27 @@ def register_routes(bp):
             
             download_url = f"{scheme}://{host}/api/download/{token}"
             
+            try:
+                file_size = file_path.stat().st_size
+            except Exception as e:
+                log_error(f"获取文件大小失败", exception=e, username=username, filename=filename)
+                file_size = 0
+            
             return jsonify({
                 'success': True,
                 'filename': file_path.name,
                 'original_filename': filename,
                 'target_path': target_path,
-                'size': file_path.stat().st_size,
+                'size': file_size,
                 'upload_time': datetime.now().isoformat(),
                 'download_token': token,
                 'download_url': download_url
             })
+        except (APIError, ValidationError, NotFoundError):
+            raise
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 500
+            log_error(f"上传文件时发生未预期的错误", exception=e, username=session.get('username', 'admin'))
+            raise APIError('上传文件失败', status_code=500, error_code='UPLOAD_FAILED')
     
     @bp.route('/autodl/uploaded-files', methods=['GET'])
     @login_required
@@ -1217,28 +1315,37 @@ def register_routes(bp):
             
             files = []
             if user_upload_dir.exists():
-                for file_path in user_upload_dir.iterdir():
-                    if file_path.is_file():
-                        stat = file_path.stat()
-                        relative_path = file_path.relative_to(UPLOADED_FILES_DIR)
-                        token = generate_download_token(str(relative_path))
-                        download_url = f"{scheme}://{host}/api/download/{token}"
-                        files.append({
-                            'filename': file_path.name,
-                            'size': stat.st_size,
-                            'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                            'download_token': token,
-                            'download_url': download_url
-                        })
+                try:
+                    for file_path in user_upload_dir.iterdir():
+                        if file_path.is_file():
+                            try:
+                                stat = file_path.stat()
+                                relative_path = file_path.relative_to(UPLOADED_FILES_DIR)
+                                token = generate_download_token(str(relative_path))
+                                download_url = f"{scheme}://{host}/api/download/{token}"
+                                files.append({
+                                    'filename': file_path.name,
+                                    'size': stat.st_size,
+                                    'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                                    'download_token': token,
+                                    'download_url': download_url
+                                })
+                            except Exception as e:
+                                log_error(f"处理文件信息失败: {file_path}", exception=e, username=username)
+                                continue
+                except Exception as e:
+                    log_error(f"读取用户上传目录失败: {user_upload_dir}", exception=e, username=username)
+                    raise APIError('读取文件列表失败', status_code=500, error_code='LIST_FILES_FAILED')
             
             # 按修改时间倒序排列
             files.sort(key=lambda x: x['modified'], reverse=True)
             
             return jsonify({'files': files})
+        except (APIError, ValidationError, NotFoundError):
+            raise
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 500
+            log_error(f"列出上传文件时发生未预期的错误", exception=e, username=session.get('username', 'admin'))
+            raise APIError('获取文件列表失败', status_code=500, error_code='LIST_FAILED')
     
     @bp.route('/autodl/uploaded-files/<filename>', methods=['DELETE'])
     @login_required
@@ -1253,15 +1360,20 @@ def register_routes(bp):
             try:
                 file_path.resolve().relative_to(user_upload_dir.resolve())
             except ValueError:
-                return jsonify({'error': '无权访问该文件'}), 403
+                raise UnauthorizedError('无权访问该文件')
             
             if not file_path.exists():
-                return jsonify({'error': '文件不存在'}), 404
+                raise NotFoundError('文件不存在')
             
-            file_path.unlink()
+            try:
+                file_path.unlink()
+            except Exception as e:
+                log_error(f"删除文件失败: {file_path}", exception=e, username=username, filename=filename)
+                raise APIError('删除文件失败', status_code=500, error_code='DELETE_FAILED')
             
             return jsonify({'success': True, 'message': '文件已删除'})
+        except (APIError, ValidationError, NotFoundError, UnauthorizedError):
+            raise
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 500
+            log_error(f"删除上传文件时发生未预期的错误", exception=e, username=session.get('username', 'admin'), filename=filename)
+            raise APIError('删除文件失败', status_code=500, error_code='DELETE_FAILED')

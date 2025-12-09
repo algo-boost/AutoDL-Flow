@@ -58,10 +58,52 @@ AutoDL Flow 是一个基于 Flask 的 Web 工具，用于自动生成作业执�
 pip install -r requirements.txt
 ```
 
+### 配置密钥（重要）
+
+**快速修复：**
+如果遇到 `SECRET_KEY 未设置` 错误，可以使用修复脚本：
+```bash
+./fix_secret_key.sh
+```
+
+**开发环境**（可选）：
+```bash
+# 未设置时会自动生成临时密钥（仅用于开发测试）
+# 建议设置：export FLASK_SECRET_KEY='your-dev-secret-key'
+```
+
+**生产环境**（必须）：
+```bash
+# 必须设置强密钥，长度至少 32 字符
+export FLASK_ENV=production
+export FLASK_SECRET_KEY='your-strong-secret-key-at-least-32-chars'
+
+# 生成强密钥的方法：
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+**常见问题：**
+- **错误：`SECRET_KEY 未设置！检测到生产环境`**
+  - 如果这是开发环境，取消生产环境设置：`unset FLASK_ENV` 或 `unset ENVIRONMENT`
+  - 如果是生产环境，设置密钥：`export FLASK_SECRET_KEY='your-secret-key'`
+  
+- **错误：`SECRET_KEY 长度不足`**
+  - 使用至少 32 字符的密钥
+  - 生成密钥：`python3 -c "import secrets; print(secrets.token_urlsafe(32))"`
+
 ### 运行工具
 
+**开发环境：**
 ```bash
 python app.py
+# 或使用启动脚本
+./scripts/start_app.sh
+```
+
+**生产环境：**
+```bash
+# 使用生产环境启动脚本（会自动加载 .env.production）
+./scripts/start_production.sh
 ```
 
 然后在浏览器中访问：`http://localhost:6008`（默认端口 6008）

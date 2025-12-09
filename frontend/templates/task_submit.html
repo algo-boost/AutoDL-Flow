@@ -902,7 +902,7 @@
             <div class="nav-tabs">
                 <button class="nav-tab active" data-tab="submit" onclick="switchTab('submit', this)">创建任务</button>
                 <button class="nav-tab" data-tab="records" onclick="switchTab('records', this)">任务记录</button>
-                <button class="nav-tab" data-tab="deployments" onclick="switchTab('deployments', this)">运行中任务</button>
+                <button class="nav-tab" data-tab="deployments" onclick="switchTab('deployments', this)">任务队列</button>
                 <button class="nav-tab" data-tab="resources" onclick="switchTab('resources', this)">GPU 资源</button>
                 <button class="nav-tab" data-tab="settings" onclick="switchTab('settings', this)">系统设置</button>
             </div>
@@ -1017,7 +1017,10 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">构建脚本（可选）</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label class="form-label" style="margin-bottom: 0;">构建脚本（可选）</label>
+                            <button type="button" class="btn btn-primary" onclick="loadHistoryScripts()" style="width: auto; padding: 6px 12px; font-size: 0.85em; background: #17a2b8;">刷新列表</button>
+                        </div>
                         <select id="history_script" class="form-input">
                             <option value="">不使用构建脚本</option>
                         </select>
@@ -1153,15 +1156,24 @@
                 </div>
             </div>
 
-            <!-- 运行中任务标签页 -->
+            <!-- 任务列表标签页 -->
             <div id="tab-deployments" class="tab-content">
                 <div class="section">
-                    <div class="section-title">
-                        <span>运行中任务</span>
-                        <button class="btn btn-primary" onclick="loadDeployments()" style="margin-left: auto;">刷新列表</button>
+                    <div class="section-title" style="display:flex;gap:10px;align-items:center;">
+                        <span>任务</span>
+                        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-secondary" id="btn-multi-select" onclick="toggleMultiSelectMode()" style="background:#6c757d;">多选</button>
+                            <button class="btn btn-primary" onclick="loadDeployments()">刷新列表</button>
+                            <button class="btn btn-danger" id="btn-batch-delete" onclick="batchDeleteDeployments()" style="background:#dc3545;display:none;">批量删除</button>
+                        </div>
+                    </div>
+                    <div class="sub-tab-nav" id="deployment-sub-tabs" style="display:flex;gap:8px;margin:10px 0;">
+                        <button class="btn btn-light sub-tab-btn active" data-tab="running" onclick="switchDeploymentTab('running')" style="padding:6px 12px;">运行中</button>
+                        <button class="btn btn-light sub-tab-btn" data-tab="stopped" onclick="switchDeploymentTab('stopped')" style="padding:6px 12px;">已停止</button>
                     </div>
                     <div id="deployments-list" class="deployment-list">
-                        <div class="loading">点击"刷新列表"加载运行中任务信息</div>
+                        <div id="running-deployments-container" class="deployment-container"></div>
+                        <div id="stopped-deployments-container" class="deployment-container" style="display:none;"></div>
                     </div>
                 </div>
             </div>
@@ -1828,6 +1840,9 @@
         async function loadHistoryScripts() {
             const select = document.getElementById('history_script');
             if (!select) return;
+            
+            // 保存当前选中的值
+            const currentValue = select.value;
             select.innerHTML = '<option value="">加载中...</option>';
             
             try {
@@ -1870,6 +1885,14 @@
                         });
                     }
                     
+                    // 恢复之前的选择（如果该脚本仍然存在）
+                    if (currentValue) {
+                        const optionExists = Array.from(select.options).some(opt => opt.value === currentValue);
+                        if (optionExists) {
+                            select.value = currentValue;
+                        }
+                    }
+                    
                     // 绑定选择事件
                     select.onchange = async function() {
                         await handleScriptSelection(this.value);
@@ -1891,11 +1914,373 @@
             console.log('Selected history script:', filename);
         }
 
+        // 判断状态是否运行中
+        function isRunningStatus(status) {
+            const s = (status || '').toLowerCase();
+            const runningSet = ['running', 'creating', 'pending', 'starting', 'init', 'initializing', 'queued'];
+            return runningSet.includes(s);
+        }
+
+        // 切换运行/停止子标签
+        function switchDeploymentTab(tab) {
+            activeDeploymentTab = tab;
+            const runningContainer = document.getElementById('running-deployments-container');
+            const stoppedContainer = document.getElementById('stopped-deployments-container');
+            const buttons = document.querySelectorAll('#deployment-sub-tabs .sub-tab-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.tab === tab) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            if (runningContainer && stoppedContainer) {
+                runningContainer.style.display = tab === 'running' ? 'block' : 'none';
+                stoppedContainer.style.display = tab === 'stopped' ? 'block' : 'none';
+            }
+        }
+
+        // 渲染运行中任务
+        async function renderRunningDeployments(runningDeployments) {
+            const container = document.getElementById('running-deployments-container');
+            if (!container) return;
+            if (!runningDeployments || runningDeployments.length === 0) {
+                container.innerHTML = '<div class="loading">暂无正在运行的任务</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="loading">加载中...</div>';
+
+            const sshInfoPromises = runningDeployments.map(deploy => {
+                const deploymentUuid = deploy.uuid || deploy.id || deploy.deployment_uuid || '';
+                if (deploymentUuid) {
+                    return getSSHInfoForDeployment(deploymentUuid).then(sshData => ({
+                        deploy,
+                        sshData
+                    }));
+                } else {
+                    return Promise.resolve({
+                        deploy,
+                        sshData: { status: 'error', message: '无部署UUID' }
+                    });
+                }
+            });
+
+            const deploymentsWithSSH = await Promise.all(sshInfoPromises);
+
+            // 清理无效的选中项
+            const validUuids = new Set((runningDeployments || []).map(d => d.uuid || d.id || d.deployment_uuid));
+            selectedRunningDeployments = new Set([...selectedRunningDeployments].filter(id => validUuids.has(id)));
+
+            let html = '';
+            if (multiSelectMode) {
+                html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
+                html += `<label style="font-size:0.9em;"><input type="checkbox" id="running-select-all" onchange="toggleRunningSelectAll(this.checked)" ${selectedRunningDeployments.size === runningDeployments.length && runningDeployments.length > 0 ? 'checked' : ''}> 全选</label>`;
+                html += `<span style="font-size:0.9em;color:#6c757d;">已选 ${selectedRunningDeployments.size} 个</span>`;
+                html += '</div>';
+            }
+
+            html += '<table class="deployment-table">';
+            html += '<thead><tr>';
+            if (multiSelectMode) {
+                html += '<th style="width:40px;"></th>';
+            }
+            html += '<th>部署名称</th>';
+            html += '<th>类型</th>';
+            html += '<th>状态</th>';
+            html += '<th>创建时间</th>';
+            html += '<th>SSH命令</th>';
+            html += '<th>Root密码</th>';
+            html += '<th>6006端口服务</th>';
+            html += '<th>6008端口服务</th>';
+            html += '<th>操作</th>';
+            html += '</tr></thead>';
+            html += '<tbody>';
+
+            deploymentsWithSSH.forEach(({ deploy, sshData }) => {
+                const deploymentUuid = deploy.uuid || deploy.id || deploy.deployment_uuid || '';
+                const status = deploy.status || deploy.state || 'unknown';
+                const statusClass = isRunningStatus(status) ? 'status-running' : 'status-stopped';
+                const createdTime = deploy.created_at || deploy.created_time || '未知';
+                const formattedTime = createdTime !== '未知' ? new Date(createdTime).toLocaleString('zh-CN') : '未知';
+                const sshInfo = sshData.sshInfo || {};
+                const checked = multiSelectMode && selectedRunningDeployments.has(deploymentUuid) ? 'checked' : '';
+
+                html += '<tr>';
+                if (multiSelectMode) {
+                    html += `<td><input type="checkbox" ${checked} onchange="toggleRunningSelection('${deploymentUuid}', this.checked)"></td>`;
+                }
+                html += `<td style="font-weight: 600;">${deploy.name || '未命名部署'}</td>`;
+                html += `<td>${deploy.type || deploy.deployment_type || '未知'}</td>`;
+                html += `<td><span class="status-badge ${statusClass}">${status}</span></td>`;
+                html += `<td>${formattedTime}</td>`;
+
+                const sshCommand = sshInfo.ssh_command || sshInfo.command || '';
+                if (sshCommand) {
+                    const escapedCommand = sshCommand.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    html += `<td style="word-break: break-all; padding: 8px;">`;
+                    html += `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">`;
+                    html += `<code style="background: #f8f9fa; padding: 3px 6px; border-radius: 3px; font-size: 0.7em; border: 1px solid #dee2e6; white-space: pre-wrap; flex: 1; min-width: 200px;">${escapedCommand}</code>`;
+                    html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshCommand.replace(/'/g, "\\'").replace(/\\n/g, '\\\\n')}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
+                    html += `</div></td>`;
+                } else if (sshData.status === 'pending') {
+                    html += `<td style="color: #856404; font-size: 0.7em; padding: 8px;">${(sshData.message || '排队中').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+                } else if (sshData.status === 'error') {
+                    html += `<td style="color: #dc3545; font-size: 0.7em; padding: 8px;">${(sshData.message || '获取失败').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+                } else {
+                    html += `<td style="color: #6c757d; font-size: 0.7em; padding: 8px;">暂无 SSH 信息</td>`;
+                }
+
+                const rootPassword = sshInfo.root_password || '';
+                if (rootPassword) {
+                    const escapedPassword = rootPassword.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    html += `<td style="padding: 8px;">`;
+                    html += `<div style="display: flex; align-items: center; gap: 6px;">`;
+                    html += `<code style="background: #f8f9fa; padding: 3px 6px; border-radius: 3px; font-size: 0.7em; border: 1px solid #dee2e6; flex: 1; min-width: 100px;">${escapedPassword}</code>`;
+                    html += `<button class="btn btn-primary" onclick="copyToClipboard('${rootPassword.replace(/'/g, "\\'")}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
+                    html += `</div></td>`;
+                } else if (sshData.status === 'pending') {
+                    html += `<td style="color: #856404; font-size: 0.7em;">等待分配</td>`;
+                } else if (sshData.status === 'error') {
+                    html += `<td style="color: #dc3545; font-size: 0.7em;">获取失败</td>`;
+                } else {
+                    html += `<td style="color: #6c757d; font-size: 0.7em;">暂无</td>`;
+                }
+
+                const service6006 = sshInfo.service_6006_port_url || sshInfo.service_6006_port || sshInfo.port_6006 || '';
+                if (service6006) {
+                    html += `<td><a href="${service6006}" target="_blank" style="color: #007bff; text-decoration: underline;">打开</a></td>`;
+                } else {
+                    html += `<td style="color: #6c757d; font-size: 0.7em;">暂无</td>`;
+                }
+
+                const service6008 = sshInfo.service_6008_port_url || sshInfo.service_6008_port || sshInfo.port_6008 || '';
+                if (service6008) {
+                    html += `<td><a href="${service6008}" target="_blank" style="color: #007bff; text-decoration: underline;">打开</a></td>`;
+                } else {
+                    html += `<td style="color: #6c757d; font-size: 0.7em;">暂无</td>`;
+                }
+
+                html += `<td style="padding: 8px;">`;
+                html += `<div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">`;
+                if (deploymentUuid) {
+                    if (!multiSelectMode) {
+                        if (isRunningStatus(status)) {
+                            html += `<button class="btn btn-warning" onclick="stopDeployment('${deploymentUuid.replace(/'/g, "\\'")}', this)" style="padding: 2px 8px; font-size: 0.7em; background: #ffc107; border: none; color: #000; white-space: nowrap; cursor: pointer;">停止</button>`;
+                        }
+                        html += `<button class="btn btn-danger" onclick="deleteDeployment('${deploymentUuid.replace(/'/g, "\\'")}', this)" style="padding: 2px 8px; font-size: 0.7em; background: #dc3545; border: none; color: white; white-space: nowrap; cursor: pointer;">删除</button>`;
+                    } else {
+                        html += `<span style="color: #999; font-size: 0.7em;">已选中</span>`;
+                    }
+                } else {
+                    html += `<span style="color: #999; font-size: 0.7em;">无UUID</span>`;
+                }
+                html += `</div>`;
+                html += `</td>`;
+
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // 渲染已停止任务
+        function renderStoppedDeployments(stoppedDeployments) {
+            const container = document.getElementById('stopped-deployments-container');
+            if (!container) return;
+
+            const validUuids = new Set((stoppedDeployments || []).map(d => d.uuid || d.id || d.deployment_uuid));
+            selectedStoppedDeployments = new Set([...selectedStoppedDeployments].filter(id => validUuids.has(id)));
+
+            if (!stoppedDeployments || stoppedDeployments.length === 0) {
+                container.innerHTML = '<div class="loading">暂无已停止的任务</div>';
+                return;
+            }
+
+            let html = '';
+            if (multiSelectMode) {
+                html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
+                html += `<label style="font-size:0.9em;"><input type="checkbox" id="stopped-select-all" onchange="toggleStoppedSelectAll(this.checked)" ${selectedStoppedDeployments.size === stoppedDeployments.length && stoppedDeployments.length > 0 ? 'checked' : ''}> 全选</label>`;
+                html += `<span style="font-size:0.9em;color:#6c757d;">已选 ${selectedStoppedDeployments.size} 个</span>`;
+                html += '</div>';
+            }
+
+            html += '<table class="deployment-table">';
+            html += '<thead><tr>';
+            if (multiSelectMode) {
+                html += '<th style="width:40px;"></th>';
+            }
+            html += '<th>部署名称</th>';
+            html += '<th>类型</th>';
+            html += '<th>状态</th>';
+            html += '<th>创建时间</th>';
+            html += '<th>操作</th>';
+            html += '</tr></thead>';
+            html += '<tbody>';
+
+            stoppedDeployments.forEach(deploy => {
+                const deploymentUuid = deploy.uuid || deploy.id || deploy.deployment_uuid || '';
+                const status = deploy.status || deploy.state || 'stopped';
+                const statusClass = isRunningStatus(status) ? 'status-running' : 'status-stopped';
+                const createdTime = deploy.created_at || deploy.created_time || '未知';
+                const formattedTime = createdTime !== '未知' ? new Date(createdTime).toLocaleString('zh-CN') : '未知';
+                const checked = multiSelectMode && selectedStoppedDeployments.has(deploymentUuid) ? 'checked' : '';
+
+                html += '<tr>';
+                if (multiSelectMode) {
+                    html += `<td><input type="checkbox" ${checked} onchange="toggleStoppedSelection('${deploymentUuid}', this.checked)"></td>`;
+                }
+                html += `<td style="font-weight:600;">${deploy.name || '未命名部署'}</td>`;
+                html += `<td>${deploy.type || deploy.deployment_type || '未知'}</td>`;
+                html += `<td><span class="status-badge ${statusClass}">${status}</span></td>`;
+                html += `<td>${formattedTime}</td>`;
+                if (!multiSelectMode) {
+                    html += `<td><button class="btn btn-danger" onclick="deleteDeployment('${deploymentUuid}', this)" style="padding:4px 8px;font-size:0.8em;">删除</button></td>`;
+                } else {
+                    html += `<td><span style="color: #999; font-size: 0.7em;">已选中</span></td>`;
+                }
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function toggleStoppedSelection(uuid, checked) {
+            if (checked) {
+                selectedStoppedDeployments.add(uuid);
+            } else {
+                selectedStoppedDeployments.delete(uuid);
+            }
+            updateBatchDeleteButton();
+        }
+
+        function toggleStoppedSelectAll(checked) {
+            if (checked) {
+                deploymentsCache.stopped.forEach(d => {
+                    const uuid = d.uuid || d.id || d.deployment_uuid || '';
+                    if (uuid) selectedStoppedDeployments.add(uuid);
+                });
+            } else {
+                selectedStoppedDeployments.clear();
+            }
+            updateBatchDeleteButton();
+            renderStoppedDeployments(deploymentsCache.stopped);
+        }
+
+        function toggleRunningSelection(uuid, checked) {
+            if (checked) {
+                selectedRunningDeployments.add(uuid);
+            } else {
+                selectedRunningDeployments.delete(uuid);
+            }
+            updateBatchDeleteButton();
+        }
+
+        async function toggleRunningSelectAll(checked) {
+            if (checked) {
+                deploymentsCache.running.forEach(d => {
+                    const uuid = d.uuid || d.id || d.deployment_uuid || '';
+                    if (uuid) selectedRunningDeployments.add(uuid);
+                });
+            } else {
+                selectedRunningDeployments.clear();
+            }
+            updateBatchDeleteButton();
+            await renderRunningDeployments(deploymentsCache.running);
+        }
+
+        async function toggleMultiSelectMode() {
+            multiSelectMode = !multiSelectMode;
+            const btn = document.getElementById('btn-multi-select');
+            const batchDeleteBtn = document.getElementById('btn-batch-delete');
+            
+            if (multiSelectMode) {
+                btn.textContent = '取消多选';
+                btn.style.background = '#28a745';
+                batchDeleteBtn.style.display = 'inline-block';
+            } else {
+                btn.textContent = '多选';
+                btn.style.background = '#6c757d';
+                batchDeleteBtn.style.display = 'none';
+                selectedRunningDeployments.clear();
+                selectedStoppedDeployments.clear();
+            }
+            
+            // 重新渲染当前标签页
+            if (activeDeploymentTab === 'running') {
+                await renderRunningDeployments(deploymentsCache.running);
+            } else {
+                renderStoppedDeployments(deploymentsCache.stopped);
+            }
+            updateBatchDeleteButton();
+        }
+
+        function updateBatchDeleteButton() {
+            const batchDeleteBtn = document.getElementById('btn-batch-delete');
+            const totalSelected = selectedRunningDeployments.size + selectedStoppedDeployments.size;
+            if (multiSelectMode && totalSelected > 0) {
+                batchDeleteBtn.textContent = `批量删除 (${totalSelected})`;
+                batchDeleteBtn.disabled = false;
+            } else {
+                batchDeleteBtn.textContent = '批量删除';
+                batchDeleteBtn.disabled = true;
+            }
+        }
+
+        async function batchDeleteDeployments() {
+            const runningIds = Array.from(selectedRunningDeployments);
+            const stoppedIds = Array.from(selectedStoppedDeployments);
+            const allIds = [...runningIds, ...stoppedIds];
+            
+            if (allIds.length === 0) {
+                alert('请先选择要删除的任务');
+                return;
+            }
+            
+            const runningCount = runningIds.length;
+            const stoppedCount = stoppedIds.length;
+            let confirmMsg = `确认删除选中的 ${allIds.length} 个任务吗？`;
+            if (runningCount > 0 && stoppedCount > 0) {
+                confirmMsg += `\n其中：运行中任务 ${runningCount} 个，已停止任务 ${stoppedCount} 个`;
+            } else if (runningCount > 0) {
+                confirmMsg += `\n其中：运行中任务 ${runningCount} 个`;
+            } else {
+                confirmMsg += `\n其中：已停止任务 ${stoppedCount} 个`;
+            }
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/autodl/deployments/batch-delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ deployment_uuids: allIds })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showMessage(`已删除 ${data.deleted || allIds.length} 个任务`, 'success');
+                    selectedRunningDeployments.clear();
+                    selectedStoppedDeployments.clear();
+                    await loadDeployments();
+                } else {
+                    showMessage('删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showMessage('删除失败: ' + error.message, 'error');
+            }
+        }
+
         // 加载部署列表
         async function loadDeployments() {
-            const listDiv = document.getElementById('deployments-list');
-            if (!listDiv) return;
-            listDiv.innerHTML = '<div class="loading">加载中...</div>';
+            const runningContainer = document.getElementById('running-deployments-container');
+            const stoppedContainer = document.getElementById('stopped-deployments-container');
+            if (runningContainer) runningContainer.innerHTML = '<div class="loading">加载中...</div>';
+            if (stoppedContainer) stoppedContainer.innerHTML = '<div class="loading">加载中...</div>';
 
             try {
                 const response = await fetch('/api/autodl/deployments', {
@@ -1905,158 +2290,35 @@
                     body: JSON.stringify({})
                 });
 
-                // 检查响应类型
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     const text = await response.text();
                     console.error('Non-JSON response:', text.substring(0, 200));
-                    listDiv.innerHTML = '<div class="loading">加载失败：服务器返回了非JSON格式的响应</div>';
+                    if (runningContainer) runningContainer.innerHTML = '<div class="loading">加载失败：服务器返回了非JSON格式的响应</div>';
+                    if (stoppedContainer) stoppedContainer.innerHTML = '<div class="loading">加载失败：服务器返回了非JSON格式的响应</div>';
                     return;
                 }
 
                 const data = await response.json();
                 if (response.ok) {
-                    if (data.deployments && data.deployments.length > 0) {
-                        // 过滤出正在运行的任务
-                        const runningDeployments = data.deployments.filter(deploy => {
-                            const status = deploy.status || deploy.state || 'unknown';
-                            return status === 'running' || status === 'Running';
-                        });
-                        
-                        if (runningDeployments.length === 0) {
-                            listDiv.innerHTML = '<div class="loading">暂无正在运行的部署</div>';
-                            return;
-                        }
-                        
-                        // 创建表格
-                        let html = '<table class="deployment-table">';
-                        html += '<thead><tr>';
-                        html += '<th>部署名称</th>';
-                        html += '<th>类型</th>';
-                        html += '<th>状态</th>';
-                        html += '<th>创建时间</th>';
-                        html += '<th>SSH命令</th>';
-                        html += '<th>Root密码</th>';
-                        html += '<th>6006端口服务</th>';
-                        html += '<th>6008端口服务</th>';
-                        html += '<th>操作</th>';
-                        html += '</tr></thead>';
-                        html += '<tbody>';
-                        
-                        // 并行获取所有部署的SSH信息
-                        const sshInfoPromises = runningDeployments.map(deploy => {
-                            const deploymentUuid = deploy.uuid || deploy.id || deploy.deployment_uuid || '';
-                            if (deploymentUuid) {
-                                return getSSHInfoForDeployment(deploymentUuid).then(sshData => ({
-                                    deploy,
-                                    sshData
-                                }));
-                            } else {
-                                return Promise.resolve({
-                                    deploy,
-                                    sshData: { status: 'error', message: '无部署UUID' }
-                                });
-                            }
-                        });
-                        
-                        const deploymentsWithSSH = await Promise.all(sshInfoPromises);
-                        
-                        deploymentsWithSSH.forEach(({ deploy, sshData }) => {
-                            // 获取部署UUID
-                            const deploymentUuid = deploy.uuid || deploy.id || deploy.deployment_uuid || '';
-                            
-                            const status = deploy.status || deploy.state || 'unknown';
-                            const statusClass = status === 'running' || status === 'Running' ? 'status-running' : 'status-stopped';
-                            const createdTime = deploy.created_at || deploy.created_time || '未知';
-                            const formattedTime = createdTime !== '未知' ? new Date(createdTime).toLocaleString('zh-CN') : '未知';
-                            
-                            const sshInfo = sshData.sshInfo || {};
-                            
-                            html += '<tr>';
-                            html += `<td style="font-weight: 600;">${deploy.name || '未命名部署'}</td>`;
-                            html += `<td>${deploy.type || deploy.deployment_type || '未知'}</td>`;
-                            html += `<td><span class="status-badge ${statusClass}">${status}</span></td>`;
-                            html += `<td>${formattedTime}</td>`;
-                            
-                            // SSH命令列
-                            const sshCommand = sshInfo.ssh_command || sshInfo.command || '';
-                            if (sshCommand) {
-                                // 转义HTML特殊字符，防止XSS
-                                const escapedCommand = sshCommand.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                                html += `<td style="word-break: break-all; padding: 8px;">`;
-                                html += `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">`;
-                                html += `<code style="background: #f8f9fa; padding: 3px 6px; border-radius: 3px; font-size: 0.7em; border: 1px solid #dee2e6; white-space: pre-wrap; flex: 1; min-width: 200px;">${escapedCommand}</code>`;
-                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshCommand.replace(/'/g, "\\'").replace(/\n/g, '\\n')}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
-                                html += `</div></td>`;
-                            } else if (sshData.status === 'pending') {
-                                html += `<td style="color: #856404; font-size: 0.7em; padding: 8px;">${(sshData.message || '排队中').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
-                            } else if (sshData.status === 'error') {
-                                html += `<td style="color: #dc3545; font-size: 0.7em; padding: 8px;">${(sshData.message || '获取失败').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
-                            } else {
-                                html += `<td style="color: #999; padding: 8px;">-</td>`;
-                            }
-                            
-                            // Root密码列
-                            if (sshInfo.root_password) {
-                                const escapedPassword = sshInfo.root_password.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                                html += `<td style="padding: 8px;">`;
-                                html += `<div style="display: flex; align-items: center; gap: 6px;">`;
-                                html += `<code style="background: #f8f9fa; padding: 3px 6px; border-radius: 3px; font-size: 0.7em; border: 1px solid #dee2e6; flex: 1; min-width: 100px;">${escapedPassword}</code>`;
-                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshInfo.root_password.replace(/'/g, "\\'")}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
-                                html += `</div></td>`;
-                            } else {
-                                html += `<td style="color: #999; padding: 8px;">-</td>`;
-                            }
-                            
-                            // 6006端口服务列
-                            if (sshInfo.service_6006_port_url) {
-                                const escapedUrl = sshInfo.service_6006_port_url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                                html += `<td style="word-break: break-all; padding: 8px;">`;
-                                html += `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">`;
-                                html += `<a href="${sshInfo.service_6006_port_url}" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.7em; flex: 1; min-width: 150px; word-break: break-all;">${escapedUrl}</a>`;
-                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshInfo.service_6006_port_url.replace(/'/g, "\\'")}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
-                                html += `</div></td>`;
-                            } else {
-                                html += `<td style="color: #999; padding: 8px;">-</td>`;
-                            }
-                            
-                            // 6008端口服务列
-                            if (sshInfo.service_6008_port_url) {
-                                const escapedUrl = sshInfo.service_6008_port_url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                                html += `<td style="word-break: break-all; padding: 8px;">`;
-                                html += `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">`;
-                                html += `<a href="${sshInfo.service_6008_port_url}" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.7em; flex: 1; min-width: 150px; word-break: break-all;">${escapedUrl}</a>`;
-                                html += `<button class="btn btn-primary" onclick="copyToClipboard('${sshInfo.service_6008_port_url.replace(/'/g, "\\'")}')" style="padding: 2px 6px; font-size: 0.65em; white-space: nowrap;">复制</button>`;
-                                html += `</div></td>`;
-                            } else {
-                                html += `<td style="color: #999; padding: 8px;">-</td>`;
-                            }
-                            
-                            // 操作列（停止和删除）
-                            html += `<td style="padding: 8px;">`;
-                            html += `<div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">`;
-                            if (deploymentUuid) {
-                                html += `<button class="btn btn-warning" onclick="stopDeployment('${deploymentUuid.replace(/'/g, "\\'")}', this)" style="padding: 2px 8px; font-size: 0.7em; background: #ffc107; border: none; color: #000; white-space: nowrap; cursor: pointer;">停止</button>`;
-                                html += `<button class="btn btn-danger" onclick="deleteDeployment('${deploymentUuid.replace(/'/g, "\\'")}', this)" style="padding: 2px 8px; font-size: 0.7em; background: #dc3545; border: none; color: white; white-space: nowrap; cursor: pointer;">删除</button>`;
-                            } else {
-                                html += `<span style="color: #999; font-size: 0.7em;">无UUID</span>`;
-                            }
-                            html += `</div>`;
-                            html += `</td>`;
-                            
-                            html += '</tr>';
-                        });
-                        
-                        html += '</tbody></table>';
-                        listDiv.innerHTML = html;
-                    } else {
-                        listDiv.innerHTML = '<div class="loading">暂无部署</div>';
-                    }
+                    const deployments = data.deployments || [];
+                    const running = deployments.filter(d => isRunningStatus(d.status || d.state));
+                    const stopped = deployments.filter(d => !isRunningStatus(d.status || d.state));
+                    deploymentsCache = { running, stopped };
+                    selectedStoppedDeployments.clear();
+                    selectedRunningDeployments.clear();
+
+                    await renderRunningDeployments(running);
+                    renderStoppedDeployments(stopped);
+                    switchDeploymentTab(activeDeploymentTab);
+                    updateBatchDeleteButton();
                 } else {
-                    listDiv.innerHTML = '<div class="loading">加载失败：' + (data.error || '未知错误') + '</div>';
+                    if (runningContainer) runningContainer.innerHTML = '<div class="loading">加载失败</div>';
+                    if (stoppedContainer) stoppedContainer.innerHTML = '<div class="loading">加载失败</div>';
                 }
             } catch (error) {
-                listDiv.innerHTML = '<div class="loading">加载失败：' + error.message + '</div>';
+                if (runningContainer) runningContainer.innerHTML = '<div class="loading">加载失败：' + error.message + '</div>';
+                if (stoppedContainer) stoppedContainer.innerHTML = '<div class="loading">加载失败：' + error.message + '</div>';
             }
         }
 
@@ -2327,6 +2589,11 @@
         // 文件上传相关
         let uploadedFiles = [];
         let selectedFiles = []; // 存储选中的文件 {filename, download_url, target_path}
+        let deploymentsCache = { running: [], stopped: [] };
+        let activeDeploymentTab = 'running';
+        let selectedStoppedDeployments = new Set();
+        let selectedRunningDeployments = new Set();
+        let multiSelectMode = false;
         
         // 加载已上传的文件列表
         async function loadUploadedFiles() {
@@ -2334,6 +2601,21 @@
                 const response = await fetch('/api/autodl/uploaded-files', {
                     credentials: 'same-origin'
                 });
+                
+                // 检查响应状态
+                if (!response.ok) {
+                    let errorMessage = `加载失败: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        // 如果响应不是JSON，使用默认错误消息
+                    }
+                    throw new Error(errorMessage);
+                }
+                
                 const data = await response.json();
                 
                 if (data.error) {
@@ -2480,10 +2762,29 @@
                     body: formData
                 });
                 
+                // 检查响应状态
+                if (!response.ok) {
+                    let errorMessage = `上传失败: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        // 如果响应不是JSON，使用默认错误消息
+                    }
+                    throw new Error(errorMessage);
+                }
+                
                 const data = await response.json();
                 
                 if (data.error) {
                     throw new Error(data.error);
+                }
+                
+                // 验证响应数据
+                if (!data.filename || !data.download_url) {
+                    throw new Error('服务器响应数据不完整');
                 }
                 
                 // 上传成功后，自动选中该文件
@@ -2497,7 +2798,7 @@
                 await loadUploadedFiles();
                 renderSelectedFilesList();
                 
-                alert(`文件 "${data.original_filename}" 上传成功！`);
+                alert(`文件 "${data.original_filename || data.filename}" 上传成功！`);
             } catch (error) {
                 console.error('上传文件失败:', error);
                 alert('上传文件失败: ' + error.message);
@@ -2515,6 +2816,20 @@
                     method: 'DELETE',
                     credentials: 'same-origin'
                 });
+                
+                // 检查响应状态
+                if (!response.ok) {
+                    let errorMessage = `删除失败: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        // 如果响应不是JSON，使用默认错误消息
+                    }
+                    throw new Error(errorMessage);
+                }
                 
                 const data = await response.json();
                 
@@ -2819,6 +3134,14 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
         }
         
         // 预览执行命令
+        // 安全引用文件路径（用双引号包裹，转义特殊字符）
+        function quotePath(path) {
+            if (!path) return '""';
+            // 转义双引号和反斜杠
+            const escaped = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+            return `"${escaped}"`;
+        }
+        
         async function previewCommand() {
             try {
                 // 获取运行脚本
@@ -2948,31 +3271,31 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                                 // 如果是相对路径，转换为完整URL
                                 fileUrl = baseUrl + (fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl);
                             }
-                            cmdParts.push(`wget ${fileUrl} -O ${targetPath}`);
+                            cmdParts.push(`wget ${fileUrl} -O ${quotePath(targetPath)}`);
                         }
                         cmdParts.push('');
                     }
                     
                     if (buildScriptUrl) {
                         cmdParts.push('# 下载构建脚本');
-                        cmdParts.push(`wget ${buildScriptUrl} -O build.sh`);
+                        cmdParts.push(`wget ${buildScriptUrl} -O ${quotePath('build.sh')}`);
                         cmdParts.push('');
                     }
                     
                     cmdParts.push('# 下载环境变量脚本');
-                    cmdParts.push(`wget ${taskEnvScriptUrl} -O env.sh`);
+                    cmdParts.push(`wget ${taskEnvScriptUrl} -O ${quotePath('env.sh')}`);
                     cmdParts.push('');
                     cmdParts.push('# 加载环境变量');
-                    cmdParts.push('source env.sh');
+                    cmdParts.push(`source ${quotePath('env.sh')}`);
                     cmdParts.push('');
                     cmdParts.push('# 下载运行脚本');
-                    cmdParts.push(`wget ${runScriptUrl} -O ${runScriptFilename}`);
+                    cmdParts.push(`wget ${runScriptUrl} -O ${quotePath(runScriptFilename)}`);
                     cmdParts.push('');
                     cmdParts.push('# 执行运行脚本');
                     if (runScriptType === 'python') {
-                        cmdParts.push(`python3 ${runScriptFilename}`);
+                        cmdParts.push(`python3 ${quotePath(runScriptFilename)}`);
                     } else {
-                        cmdParts.push(`bash ${runScriptFilename}`);
+                        cmdParts.push(`bash ${quotePath(runScriptFilename)}`);
                     }
                     
                     // 添加到所有任务预览中
@@ -3172,25 +3495,42 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
 
                         const envScriptUrl = envScriptData.download_url;
                         
-                        // 构建启动命令
-                        let cmd = '';
+                        // 构建启动命令（用 && 连接成一行）
+                        const cmdParts = [];
                         
                         // 先下载所有选中的文件
                         for (const file of selectedFiles) {
                             const targetPath = file.target_path || `/root/${file.filename}`;
-                            cmd += `wget ${file.download_url} -O ${targetPath} && `;
+                            // 确保使用完整的URL
+                            let fileUrl = file.download_url;
+                            if (fileUrl && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+                                // 如果是相对路径，转换为完整URL
+                                const baseUrl = window.location.origin;
+                                fileUrl = baseUrl + (fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl);
+                            }
+                            cmdParts.push(`wget ${fileUrl} -O ${quotePath(targetPath)}`);
                         }
                         
                         if (buildScriptUrl) {
-                            cmd += `wget ${buildScriptUrl} -O build.sh && `;
+                            cmdParts.push(`wget ${buildScriptUrl} -O ${quotePath('build.sh')}`);
                         }
-                        cmd += `wget ${envScriptUrl} -O env.sh && `;
-                        cmd += `source env.sh && `;
-                        cmd += `wget ${runScriptUrl} -O ${runScriptFilename} && `;
+                        cmdParts.push(`wget ${envScriptUrl} -O ${quotePath('env.sh')}`);
+                        cmdParts.push(`source ${quotePath('env.sh')}`);
+                        cmdParts.push(`wget ${runScriptUrl} -O ${quotePath(runScriptFilename)}`);
                         if (runScriptType === 'python') {
-                            cmd += `python3 ${runScriptFilename}`;
+                            cmdParts.push(`python3 ${quotePath(runScriptFilename)}`);
                         } else {
-                            cmd += `bash ${runScriptFilename}`;
+                            cmdParts.push(`bash ${quotePath(runScriptFilename)}`);
+                        }
+                        
+                        // 用 && 连接所有命令成一行（提交时使用）
+                        // 过滤掉空字符串，确保命令正确连接
+                        const cmd = cmdParts.filter(c => c && c.trim()).join(' && ');
+                        
+                        // 调试：输出命令（开发环境）
+                        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                            console.log('提交的命令:', cmd);
+                            console.log('命令部分:', cmdParts);
                         }
                         
                         // 创建部署

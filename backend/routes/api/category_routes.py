@@ -1,9 +1,13 @@
 """
 AutoDL Flow - 类别映射组 API 路由
 """
+import logging
 from flask import request, jsonify, session
 from backend.auth.decorators import login_required
 from backend.services.category_service import CategoryService
+from backend.utils.errors import APIError, log_error
+
+logger = logging.getLogger(__name__)
 
 
 def register_routes(bp):
@@ -18,7 +22,8 @@ def register_routes(bp):
             category_groups = category_service.load_category_groups()
             return jsonify({'category_groups': category_groups})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log_error("Error loading category groups", exception=e)
+            raise APIError('加载类别映射组失败', status_code=500, error_code='LOAD_FAILED')
     
     @bp.route('/category-groups', methods=['POST'])
     @login_required
@@ -28,10 +33,17 @@ def register_routes(bp):
             data = request.json
             category_groups = data.get('category_groups', [])
             
-            if category_service.save_category_groups(category_groups):
-                return jsonify({'success': True})
-            else:
-                return jsonify({'error': 'Failed to save category groups'}), 500
+            if not isinstance(category_groups, list):
+                raise APIError('category_groups 必须是列表', status_code=400, error_code='INVALID_DATA')
+            
+            if not category_service.save_category_groups(category_groups):
+                raise APIError('保存类别映射组失败', status_code=500, error_code='SAVE_FAILED')
+            
+            logger.info(f"Category groups saved successfully, count: {len(category_groups)}")
+            return jsonify({'success': True})
+        except APIError:
+            raise
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log_error("Error saving category groups", exception=e)
+            raise APIError('保存类别映射组时发生错误', status_code=500, error_code='INTERNAL_ERROR')
 

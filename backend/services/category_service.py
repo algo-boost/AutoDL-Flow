@@ -14,7 +14,15 @@ class CategoryService:
         if CATEGORY_GROUPS_FILE.exists():
             try:
                 with open(CATEGORY_GROUPS_FILE, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    # 确保返回列表类型
+                    if isinstance(data, list):
+                        return data
+                    elif isinstance(data, dict):
+                        # 如果是字典，转换为列表
+                        return [data] if data else []
+                    else:
+                        return []
             except Exception as e:
                 print(f"Warning: Failed to load category groups file: {e}")
         

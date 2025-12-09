@@ -47,6 +47,9 @@ instance/
 !backend/
 !frontend/
 !scripts/
+!tests/
+!pytest.ini
+!run_tests.sh
 data/
 
 # 明确忽略根目录下的所有 .md 文件（除了 README.md 和 PROJECT_STRUCTURE.md）
@@ -70,6 +73,8 @@ data/
 .encryption_key
 .env
 .env.local
+.env.production
+.env.*.local
 
 # 数据目录（保留目录结构，但忽略用户数据）
 data/scripts/
@@ -89,6 +94,15 @@ archive/
 # 临时文件
 *.tmp
 *.bak
+
+# 测试相关（保留测试代码，但忽略生成的报告和缓存）
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+.pytest_cache/
 
 # 操作系统
 .DS_Store

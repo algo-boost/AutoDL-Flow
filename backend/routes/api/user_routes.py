@@ -1,14 +1,18 @@
 """
 AutoDL Flow - 用户相关 API 路由
 """
+import logging
 from flask import request, jsonify, session
 from backend.auth.decorators import login_required
 from backend.auth.utils import verify_password, hash_password, get_all_accounts, save_accounts
 from backend.services.config_service import ConfigService
 from backend.services.category_service import CategoryService
 from backend.utils.storage import get_user_env_config_file
+from backend.utils.errors import ValidationError, NotFoundError, APIError, log_error
 import json
 from urllib.parse import unquote
+
+logger = logging.getLogger(__name__)
 
 
 def register_routes(bp):
@@ -65,7 +69,7 @@ def register_routes(bp):
             model_config = data.get('config', {})
             
             if not model_name:
-                return jsonify({'error': '模型名称不能为空'}), 400
+                raise ValidationError('模型名称不能为空')
             
             # 加载当前配置
             repos, data_download, category_groups, models, bdnd_config = config_service.load_user_config(username)
@@ -74,15 +78,16 @@ def register_routes(bp):
             models[model_name] = model_config
             
             # 保存配置
-            if config_service.save_user_config(username, models=models):
-                return jsonify({'success': True, 'message': f'模型 {model_name} 配置已保存'})
-            else:
-                return jsonify({'error': '保存配置失败'}), 500
+            if not config_service.save_user_config(username, models=models):
+                raise APIError('保存配置失败', status_code=500, error_code='SAVE_FAILED')
+            
+            logger.info(f"User {username} added/updated model: {model_name}")
+            return jsonify({'success': True, 'message': f'模型 {model_name} 配置已保存'})
+        except (ValidationError, APIError):
+            raise
         except Exception as e:
-            print(f"Error adding model: {e}")
-            import traceback
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 500
+            log_error(f"Error adding model: {e}", exception=e, username=username)
+            raise APIError('添加模型配置时发生错误', status_code=500, error_code='INTERNAL_ERROR')
     
     @bp.route('/user/models/<model_name>', methods=['DELETE'])
     @login_required
@@ -96,21 +101,22 @@ def register_routes(bp):
             repos, data_download, category_groups, models, bdnd_config = config_service.load_user_config(username)
             
             if model_name not in models:
-                return jsonify({'error': '模型不存在'}), 404
+                raise NotFoundError(f'模型 {model_name} 不存在')
             
             # 删除模型
             del models[model_name]
             
             # 保存配置
-            if config_service.save_user_config(username, models=models):
-                return jsonify({'success': True, 'message': f'模型 {model_name} 已删除'})
-            else:
-                return jsonify({'error': '保存配置失败'}), 500
+            if not config_service.save_user_config(username, models=models):
+                raise APIError('保存配置失败', status_code=500, error_code='SAVE_FAILED')
+            
+            logger.info(f"User {username} deleted model: {model_name}")
+            return jsonify({'success': True, 'message': f'模型 {model_name} 已删除'})
+        except (NotFoundError, APIError):
+            raise
         except Exception as e:
-            print(f"Error deleting model: {e}")
-            import traceback
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 500
+            log_error(f"Error deleting model: {e}", exception=e, username=username, model_name=model_name)
+            raise APIError('删除模型配置时发生错误', status_code=500, error_code='INTERNAL_ERROR')
     
     @bp.route('/user/repos', methods=['GET'])
     @login_required

@@ -522,9 +522,13 @@ else
         """生成数据集合并脚本"""
         script = ""
         
+        # 如果 data_only=True，不需要 git 和 cv-scripts，直接返回空脚本或简化脚本
+        if data_only:
+            return script
+        
         # 检查是否已经选择了 cv_scripts 仓库，如果没有则需要克隆
         has_cv_scripts = False
-        if enable_repos and not data_only and selected_repos:
+        if enable_repos and selected_repos:
             for repo_data in selected_repos:
                 if repo_data['name'] == 'cv_scripts':
                     has_cv_scripts = True
@@ -535,7 +539,7 @@ else
             cv_scripts_repo = self.repos.get('cv-scripts', {})
             if cv_scripts_repo:
                 # 如果没有配置 Git SSH，需要先配置
-                needs_git_config = not (enable_repos and not data_only and selected_repos)
+                needs_git_config = not (enable_repos and selected_repos)
                 if needs_git_config:
                     git_ssh_path = self.data_download_config.get('git_ssh_path', '')
                     script += f"""

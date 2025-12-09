@@ -8,6 +8,7 @@ from backend.config import SCRIPTS_STORAGE_DIR, TEMP_SCRIPTS_DIR, UPLOADED_FILES
 from backend.services.script_generator import ScriptGenerator
 from backend.services.config_service import ConfigService
 from backend.utils.token import generate_download_token, verify_download_token
+from backend.utils.file_finder import get_username, find_file_in_user_dirs, get_user_file_path
 from pathlib import Path
 from urllib.parse import unquote
 import json
@@ -27,7 +28,7 @@ def register_routes(bp):
             if not data:
                 return jsonify({'error': '请求数据为空'}), 400
             
-            username = session.get('username', 'admin')
+            username = get_username()
             
             # 加载用户配置
             repos, data_download_config, _, models, _ = config_service.load_user_config(username)
@@ -73,7 +74,7 @@ def register_routes(bp):
         """获取脚本列表"""
         try:
             from datetime import datetime
-            username = session.get('username', 'admin')
+            username = get_username()
             accessible_dirs = get_accessible_dirs(SCRIPTS_STORAGE_DIR, username)
             
             files = []
@@ -135,7 +136,7 @@ def register_routes(bp):
             backup_to_netdisk = data.get('backup_to_netdisk', False)
             script_content = data.get('script_content')  # 如果用户编辑了脚本，直接使用编辑后的内容
             
-            username = session.get('username', 'admin')
+            username = get_username()
             
             # 如果传入了编辑后的脚本内容，直接使用；否则重新生成
             if script_content:
@@ -155,8 +156,12 @@ def register_routes(bp):
                 )
             
             # 保存到服务器本地（无论是否备份到网盘都保存）
-            user_scripts_dir = get_user_storage_dir(SCRIPTS_STORAGE_DIR, username)
-            local_file_path = user_scripts_dir / filename
+            local_file_path = get_user_file_path(
+                filename=filename,
+                file_type='script',
+                username=username,
+                create_dir=True
+            )
             try:
                 with open(local_file_path, 'w', encoding='utf-8') as f:
                     f.write(script)
@@ -245,7 +250,7 @@ def register_routes(bp):
     def download_script(filename):
         """提供脚本文件的下载链接（使用临时token，生成完整URL）"""
         try:
-            username = session.get('username', 'admin')
+            username = get_username()
             
             # URL 解码文件名
             filename = unquote(filename)
@@ -255,15 +260,13 @@ def register_routes(bp):
             if not filename.endswith('.sh'):
                 return jsonify({'error': 'Invalid file type'}), 400
             
-            # 查找文件（先检查用户目录，admin 可以检查所有目录）
-            file_path = None
-            accessible_dirs = get_accessible_dirs(SCRIPTS_STORAGE_DIR, username)
-            
-            for scripts_dir in accessible_dirs:
-                potential_path = scripts_dir / filename
-                if potential_path.exists() and potential_path.is_file():
-                    file_path = potential_path
-                    break
+            # 使用统一的文件查找工具
+            file_path = find_file_in_user_dirs(
+                filename=filename,
+                file_type='script',
+                username=username,
+                search_all_users=True
+            )
             
             if not file_path or not file_path.exists():
                 print(f"File not found: {filename}")
@@ -310,55 +313,29 @@ def register_routes(bp):
             if not filename:
                 return jsonify({'error': 'Invalid or expired token'}), 403
             
-            file_path = None
+            # 使用统一的文件查找工具
+            # 先尝试查找上传的文件
+            file_path = find_file_in_user_dirs(
+                filename=filename,
+                file_type='upload',
+                search_all_users=True
+            )
             
-            # 先检查上传的文件目录（如果包含路径分隔符，可能是上传的文件）
-            if '/' in filename or '\\' in filename:
-                # 检查是否是上传的文件（格式：username/filename）
-                parts = filename.replace('\\', '/').split('/')
-                if len(parts) == 2:
-                    potential_path = UPLOADED_FILES_DIR / parts[0] / parts[1]
-                    if potential_path.exists() and potential_path.is_file():
-                        file_path = potential_path
-                # 如果不是上传文件，检查临时脚本目录
-                if not file_path:
-                    potential_path = TEMP_SCRIPTS_DIR / filename
-                    if potential_path.exists() and potential_path.is_file():
-                        file_path = potential_path
-            else:
-                # 先检查上传的文件目录（所有用户目录）
-                if UPLOADED_FILES_DIR.exists():
-                    for item in UPLOADED_FILES_DIR.iterdir():
-                        if item.is_dir():
-                            potential_path = item / filename
-                            if potential_path.exists() and potential_path.is_file():
-                                file_path = potential_path
-                                break
-                
-                # 如果还没找到，检查脚本存储目录
-                if not file_path:
-                    # 先检查根目录（admin 的旧文件）
-                    potential_path = SCRIPTS_STORAGE_DIR / filename
-                    if potential_path.exists() and potential_path.is_file():
-                        file_path = potential_path
-                    else:
-                        # 检查所有用户目录
-                        if SCRIPTS_STORAGE_DIR.exists():
-                            for item in SCRIPTS_STORAGE_DIR.iterdir():
-                                if item.is_dir():
-                                    potential_path = item / filename
-                                    if potential_path.exists() and potential_path.is_file():
-                                        file_path = potential_path
-                                        break
-                        # 如果还没找到，检查临时目录
-                        if not file_path:
-                            if TEMP_SCRIPTS_DIR.exists():
-                                for item in TEMP_SCRIPTS_DIR.iterdir():
-                                    if item.is_dir():
-                                        potential_path = item / filename
-                                        if potential_path.exists() and potential_path.is_file():
-                                            file_path = potential_path
-                                            break
+            # 如果没找到，尝试查找脚本文件
+            if not file_path:
+                file_path = find_file_in_user_dirs(
+                    filename=filename,
+                    file_type='script',
+                    search_all_users=True
+                )
+            
+            # 如果还没找到，尝试查找临时脚本
+            if not file_path:
+                file_path = find_file_in_user_dirs(
+                    filename=filename,
+                    file_type='temp',
+                    search_all_users=True
+                )
             
             if not file_path or not file_path.exists():
                 print(f"File not found when serving: {filename}")
@@ -395,7 +372,7 @@ def register_routes(bp):
     def delete_script(filename):
         """删除脚本文件"""
         try:
-            username = session.get('username', 'admin')
+            username = get_username()
             filename = unquote(filename)
             filename = os.path.basename(filename)
             
