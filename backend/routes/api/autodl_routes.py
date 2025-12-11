@@ -1347,6 +1347,61 @@ def register_routes(bp):
             log_error(f"列出上传文件时发生未预期的错误", exception=e, username=session.get('username', 'admin'))
             raise APIError('获取文件列表失败', status_code=500, error_code='LIST_FAILED')
     
+    @bp.route('/autodl/uploaded-files/<filename>/download-url', methods=['GET'])
+    @login_required
+    def get_file_download_url(filename):
+        """获取文件的新下载URL（重新生成token）"""
+        try:
+            from urllib.parse import unquote
+            from backend.utils.file_finder import find_file_in_user_dirs, get_username
+            
+            username = get_username()
+            filename = unquote(filename)
+            
+            # 安全检查：防止路径遍历攻击
+            filename = os.path.basename(filename)
+            
+            # 查找文件
+            file_path = find_file_in_user_dirs(
+                filename=filename,
+                file_type='upload',
+                username=username,
+                search_all_users=False  # 只查找当前用户的文件
+            )
+            
+            if not file_path or not file_path.exists():
+                raise NotFoundError('文件不存在')
+            
+            # 生成新的下载 token
+            try:
+                relative_path = file_path.relative_to(UPLOADED_FILES_DIR)
+                token = generate_download_token(str(relative_path))
+            except Exception as e:
+                log_error(f"生成下载token失败", exception=e, username=username, filename=filename)
+                raise APIError('生成下载链接失败', status_code=500, error_code='TOKEN_GENERATE_FAILED')
+            
+            # 从请求中获取正确的 host 和 scheme（用于生成完整URL）
+            scheme = request.headers.get('X-Forwarded-Proto', 'http')
+            if scheme == 'http' and request.is_secure:
+                scheme = 'https'
+            
+            host = request.headers.get('X-Forwarded-Host', request.headers.get('Host', request.host))
+            if not host:
+                host = request.host or 'localhost:6008'
+            
+            download_url = f"{scheme}://{host}/api/download/{token}"
+            
+            return jsonify({
+                'success': True,
+                'filename': file_path.name,
+                'download_url': download_url
+            })
+        except (APIError, ValidationError, NotFoundError, UnauthorizedError):
+            raise
+        except Exception as e:
+            log_error(f"获取文件下载URL时发生未预期的错误", exception=e, username=session.get('username', 'admin'), filename=filename)
+            raise APIError('获取下载链接失败', status_code=500, error_code='GET_DOWNLOAD_URL_FAILED')
+    
     @bp.route('/autodl/uploaded-files/<filename>', methods=['DELETE'])
     @login_required
     def delete_uploaded_file(filename):

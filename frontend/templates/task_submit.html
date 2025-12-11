@@ -3585,11 +3585,32 @@ nohup bash build.sh > $OUTPUT/build.log 2>&1
                         // 构建启动命令（用 && 连接成一行）
                         const cmdParts = [];
                         
-                        // 先下载所有选中的文件
+                        // 先下载所有选中的文件（重新获取下载URL，确保token有效）
                         for (const file of selectedFiles) {
                             const targetPath = file.target_path || `/root/${file.filename}`;
-                            // 确保使用完整的URL
                             let fileUrl = file.download_url;
+                            
+                            // 重新获取文件下载URL（确保token有效）
+                            try {
+                                const fileUrlResponse = await fetch(`/api/autodl/uploaded-files/${encodeURIComponent(file.filename)}/download-url`, {
+                                    method: 'GET',
+                                    credentials: 'same-origin'
+                                });
+                                
+                                if (fileUrlResponse.ok) {
+                                    const fileUrlData = await fileUrlResponse.json();
+                                    if (fileUrlData.download_url) {
+                                        fileUrl = fileUrlData.download_url;
+                                    }
+                                } else {
+                                    console.warn(`无法获取文件 ${file.filename} 的新下载URL，使用原有URL`);
+                                }
+                            } catch (e) {
+                                console.warn(`获取文件 ${file.filename} 的新下载URL失败:`, e);
+                                // 如果获取新URL失败，继续使用原有URL
+                            }
+                            
+                            // 确保使用完整的URL
                             if (fileUrl && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
                                 // 如果是相对路径，转换为完整URL
                                 const baseUrl = window.location.origin;

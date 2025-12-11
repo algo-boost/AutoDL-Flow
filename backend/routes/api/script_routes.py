@@ -350,7 +350,6 @@ def register_routes(bp):
                 # 记录文件未找到的情况，包含更详细的调试信息
                 import logging
                 logger = logging.getLogger(__name__)
-                from backend.config import UPLOADED_FILES_DIR, SCRIPTS_STORAGE_DIR, TEMP_SCRIPTS_DIR
                 logger.warning(
                     f"File not found when serving via token: filename={filename}, "
                     f"token={token[:20]}..., "

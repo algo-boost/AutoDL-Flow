@@ -42,8 +42,6 @@ instance/
 /*
 # 然后排除需要保留的文件和目录
 !.gitignore
-!README.md
-!PROJECT_STRUCTURE.md
 !backend/
 !frontend/
 !scripts/
@@ -56,6 +54,7 @@ data/
 /*.md
 !README.md
 !PROJECT_STRUCTURE.md
+!USER_GUIDE.md
 
 # 明确忽略根目录下的其他文件
 /app.py

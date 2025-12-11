@@ -14,7 +14,6 @@ from backend.utils.errors import (
     handle_generic_error
 )
 
-# 初始化日志系统
 setup_logging(log_level=logging.INFO)
 
 # 创建 Flask 应用
@@ -37,4 +36,3 @@ if __name__ == '__main__':
     # 生产环境不使用 debug 模式
     debug_mode = os.environ.get('FLASK_ENV', '').lower() != 'production'
     app.run(debug=debug_mode, host='0.0.0.0', port=6008)
-
