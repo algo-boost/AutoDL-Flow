@@ -24,6 +24,24 @@ import random
 import re
 from urllib.parse import unquote
 
+# 前端勾选 value（如 RTX-4090、vGPU-48GB）→ AutoDL API 中的 gpu 型号（库存匹配与创建部署必须一致）
+# 注意：不可对全部型号做 replace('-',' ')，例如 vGPU-48GB 会变成「vGPU 48GB」导致创建部署报「号型不存在」
+FRONTEND_TO_AUTODL_GPU_NAME = {
+    'RTX-5090': 'RTX 5090',
+    'RTX-4090': 'RTX 4090',
+    'RTX-4090D': 'RTX 4090D',
+    'RTX-4080': 'RTX 4080',
+    'RTX-3090': 'RTX 3090',
+    'RTX-3080': 'RTX 3080',
+    'RTX-3070': 'RTX 3070',
+    'V100': 'V100',
+    'A100': 'A100',
+    'H100': 'H100',
+    'L20': 'L20',
+    'L40': 'L40',
+    'vGPU-48GB': 'vGPU-48GB',
+}
+
 
 def register_routes(bp):
     """注册 AutoDL 相关路由"""
@@ -378,22 +396,7 @@ def register_routes(bp):
             # 使用全局数据中心映射
             datacenter_mapping = DATACENTER_MAPPING
             
-            # GPU名称映射：前端格式 -> API返回格式
-            gpu_name_mapping = {
-                'RTX-5090': 'RTX 5090',
-                'RTX-4090': 'RTX 4090',
-                'RTX-4090D': 'RTX 4090D',
-                'RTX-4080': 'RTX 4080',
-                'RTX-3090': 'RTX 3090',
-                'RTX-3080': 'RTX 3080',
-                'RTX-3070': 'RTX 3070',
-                'V100': 'V100',
-                'A100': 'A100',
-                'H100': 'H100',
-                'L20': 'L20',
-                'L40': 'L40',
-                'vGPU-48GB': 'vGPU 48GB',
-            }
+            gpu_name_mapping = FRONTEND_TO_AUTODL_GPU_NAME
             
             # 遍历所有数据中心
             for dc_name_cn, dc_code in datacenter_mapping.items():
@@ -726,8 +729,11 @@ def register_routes(bp):
             if not dc_codes:
                 dc_codes = None
             
-            # 转换GPU名称格式（从"RTX-4090"转换为"RTX 4090"）
-            gpu_names = [gpu.replace('-', ' ') for gpu in gpu_name_set] if gpu_name_set else None
+            # 转换为创建部署接口要求的 gpu 型号字符串（与 FRONTEND_TO_AUTODL_GPU_NAME 一致）
+            gpu_names = (
+                [FRONTEND_TO_AUTODL_GPU_NAME.get(g, g.replace('-', ' ')) for g in gpu_name_set]
+                if gpu_name_set else None
+            )
             
             try:
                 # 清理命令：移除多余的空白字符，确保命令正确
