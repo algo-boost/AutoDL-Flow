@@ -1012,6 +1012,10 @@
                                 <input type="checkbox" value="L40" class="gpu-type-checkbox">
                                 <span>L40</span>
                             </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" value="vGPU-48GB" class="gpu-type-checkbox">
+                                <span>vGPU 48GB</span>
+                            </label>
                         </div>
                         <small style="color: #666; font-size: 0.85em; margin-top: 6px; display: block;">可多选，留空则自动选择</small>
                     </div>
@@ -2347,7 +2351,7 @@
                 if (response.ok) {
                     const gpuStock = data.gpu_stock || {};
                     // 显示所有GPU型号
-                    const gpuTypes = ['RTX-5090', 'RTX-4090', 'RTX-4090D', 'RTX-4080', 'RTX-3090', 'RTX-3080', 'RTX-3070', 'V100', 'A100', 'H100', 'L20', 'L40'];
+                    const gpuTypes = ['RTX-5090', 'RTX-4090', 'RTX-4090D', 'RTX-4080', 'RTX-3090', 'RTX-3080', 'RTX-3070', 'V100', 'A100', 'H100', 'L20', 'L40', 'vGPU-48GB'];
                     
                     let html = '<table class="gpu-stock-table"><thead><tr><th>数据中心</th>';
                     gpuTypes.forEach(type => {
