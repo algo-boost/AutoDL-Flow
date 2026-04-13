@@ -45,6 +45,7 @@ instance/
 !backend/
 !frontend/
 !scripts/
+!deploy/
 !tests/
 !pytest.ini
 !run_tests.sh
